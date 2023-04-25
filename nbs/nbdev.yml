@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "fastspeech"
+  site-url: "https://ahadjawaid.github.io/fastspeech"
+  description: "A pytorch implementation of the FastSpeech arachitecture"
+  repo-branch: main
+  repo-url: "https://github.com/ahadjawaid/fastspeech"
