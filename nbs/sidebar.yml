@@ -2,5 +2,8 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - 00_core.ipynb
       - 01_modules.ipynb
+      - 02_loading.ipynb
+      - 03_visualize.ipynb
+      - 04_preprocess.ipynb
+      - 05_data.ipynb
