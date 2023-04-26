@@ -24,6 +24,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.TextGrid
 env/
 build/
 develop-eggs/
