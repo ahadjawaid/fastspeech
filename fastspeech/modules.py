@@ -167,7 +167,7 @@ def length_regulator(hi: tensor, # The hidden phoneme features
     assert len(durations.sum(dim=1).unique()) == 1
     durations = (upsample_ratio * durations).to(torch.int)
     
-    (bs, _, nh), sl = inp.shape, durations[0].sum().item()
+    (bs, _, nh), sl = hi.shape, durations[0].sum().item()
     
     ho = torch.zeros((bs, sl, nh), device=device)
     for i in range(bs):
