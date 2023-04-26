@@ -19,7 +19,7 @@ class Vocab:
         self.tok2idx = {tok: i for i, tok in enumerate(self.vocab)}
         self.pad_num = self.tok2idx[pad_token]
     
-    def __getitem__(self, val: int|str): # The token string or the vectorized integer
+    def __getitem__(self, val): # The token string or the vectorized integer
         val_type = type(val)
         if val_type == int and val < len(self.vocab): 
             return self.vocab[val]
