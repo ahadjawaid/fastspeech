@@ -11,8 +11,13 @@ pip install fastspeech
 ## How to use
 
 ``` python
-loss = [0.2, 0.6, 0.57, 0.62, 0.78, 0.60, 0.2]
-plot_loss(loss)
+model = FastSpeech(vocab_sz, ni, n_bins, fft_config, 4, 
+                   fft_config, 4, dp_config)
+
+with torch.no_grad():
+    mels = model(vec, durations)[0]
+    
+show_mel(mels[0])
 ```
 
 ![](index_files/figure-commonmark/cell-2-output-1.png)
