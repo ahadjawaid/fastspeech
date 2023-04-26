@@ -6,6 +6,7 @@ __all__ = ['Vocab', 'trim_audio']
 # %% ../nbs/04_preprocess.ipynb 3
 from pathlib import Path
 import librosa
+from numpy import array
 
 # %% ../nbs/04_preprocess.ipynb 7
 class Vocab:
@@ -35,9 +36,9 @@ class Vocab:
         return list(map(lambda x: x.strip(), lines))
 
 # %% ../nbs/04_preprocess.ipynb 10
-def trim_audio(inp, # Input audio array
-               top_db, # The threshold (in decibels) below reference to consider as silence
-               n_fft, # The number of samples per analysis frame
-               hl): # The number of samples between analysis frames
+def trim_audio(inp: array, # Input audio array
+               top_db: int, # The threshold (in decibels) below reference to consider as silence
+               n_fft: int, # The number of samples per analysis frame
+               hl: int): # The number of samples between analysis frames
     audio, _  = librosa.effects.trim(y=inp, top_db=top_db, frame_length=n_fft, hop_length=hl)
     return audio

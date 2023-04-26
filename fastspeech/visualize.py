@@ -35,7 +35,7 @@ def show_mels(mels: list[array]): # List of melspectrograms
 
 # %% ../nbs/03_visualize.ipynb 13
 def plot_phoneme_durations(phonemes: list[str], # A list of phoneme strings
-                           durations: list[int|float], # A list of durations that align with phonemes
+                           durations: list[float], # A list of durations that align with phonemes
                            ax: Axes = None): # A matplotlib Axes to overlay over
     if ax is None:
         _, ax = plt.subplots()
@@ -54,7 +54,7 @@ def plot_phoneme_durations(phonemes: list[str], # A list of phoneme strings
 
 # %% ../nbs/03_visualize.ipynb 16
 def plot_loss(loss: list, # The list containing loss measurements
-              title: str="training"): # Which set of loss you are plotting
+              title: str = "training"): # Which set of loss you are plotting
     plt.plot(loss)
     plt.title(f"{title} loss")
     plt.xlabel("steps")

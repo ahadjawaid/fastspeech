@@ -14,8 +14,8 @@ def get_audio_files(dir_path: str): # Path of directory containing ```.wav``` fi
     return FileGetter(extensions='.wav')(dir_path)
 
 # %% ../nbs/02_loading.ipynb 9
-def load_audio(file_path, # Path to a file with ```.wav``` extension
-               sr): # Sampling rate
+def load_audio(file_path: str, # Path to a file with ```.wav``` extension
+               sr: int): # Sampling rate
     wav, _ = librosa.load(file_path, sr=sr)
     return wav
 
