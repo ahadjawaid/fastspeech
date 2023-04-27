@@ -12,6 +12,7 @@ import torch
 import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 from fastcore.foundation import L
+from torch import tensor
 
 # %% ../nbs/04_preprocess.ipynb 7
 def map_tensors(inp: list[list]):
