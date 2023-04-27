@@ -86,10 +86,11 @@ def compute_statistics(data: list[tensor]):
     return {"min": flat.min(), "max": flat.max(), "mean": flat.mean(), "std": flat.std()}
 
 # %% ../nbs/05_data.ipynb 10
-def collate_fn(inp, pad_num: int):
+def collate_fn(inp, pad_num: int, norm):
     phones, durations, mels = zip(*inp)
+    norm_zero = norm.normalize(0)
     
-    mel_batched, phones_batched = pad_mels(mels), pad_phones(phones, pad_num)
+    mel_batched, phones_batched = pad_mels(mels, norm_zero), pad_phones(phones, pad_num)
     duration_batched = pad_duration(durations, mel_batched.shape[-1])
     
     return phones_batched, duration_batched, mel_batched

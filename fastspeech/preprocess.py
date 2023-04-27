@@ -85,8 +85,9 @@ def trim_audio(inp: array, # Input audio array
     return audio
 
 # %% ../nbs/04_preprocess.ipynb 28
-def pad_mels(mels: list[tensor]):
-    return pad_sequence(L(mels).map(lambda x: x.T), batch_first=True).transpose(1, 2)
+def pad_mels(mels: list[tensor], norm_val=0):
+    return pad_sequence(L(mels).map(lambda x: x.T), batch_first=True, 
+                        padding_value=norm_val).transpose(1, 2)
 
 # %% ../nbs/04_preprocess.ipynb 32
 def round_and_align_durations(duration: tensor, mel_len: int):
