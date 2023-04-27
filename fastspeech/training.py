@@ -84,7 +84,7 @@ class FastspeechLearner:
     def fit(self, steps: int):
         curr_steps = 0
         
-        val_phone, val_duration, val_mel = next(iter(dl))
+        val_phone, val_duration, val_mel = next(iter(self.dl))
         show_mel(self.norm.denormalize(val_mel)[0])
               
         progress_bar = tqdm(total=steps, desc="Training", unit="step")
@@ -94,7 +94,7 @@ class FastspeechLearner:
                     
                 loss_a, loss_b = self.one_step(batch)
                 
-                if curr_steps % self.accum_grad == 0 or (curr_steps+1) == len(dl):
+                if curr_steps % self.accum_grad == 0 or (curr_steps+1) == len(self.dl):
                     self.scaler.step(self.optim)
                     self.scaler.update()
                     self.scheduler.step()
