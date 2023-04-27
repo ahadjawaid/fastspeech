@@ -11,18 +11,18 @@ from .loading import load_audio
 from matplotlib.patches import Rectangle
 from numpy import array
 
-# %% ../nbs/03_visualize.ipynb 6
+# %% ../nbs/03_visualize.ipynb 7
 def plot_wav(wav: array): # The tensor of sampled waveform
     plt.plot(wav)
     plt.title("Waveform")
     plt.xlabel("Sampled timesteps")
     plt.ylabel("Amplitude")
 
-# %% ../nbs/03_visualize.ipynb 8
+# %% ../nbs/03_visualize.ipynb 9
 def show_mel(mel: array): # A melspectrogram array
     plt.imshow(librosa.power_to_db(mel), origin="lower")
 
-# %% ../nbs/03_visualize.ipynb 10
+# %% ../nbs/03_visualize.ipynb 11
 def show_mels(mels: list[array]): # List of melspectrograms
     num_mels = len(mels)
     fig, axes = plt.subplots(nrows=num_mels, ncols=1, figsize=(10, 2*num_mels))
@@ -33,7 +33,7 @@ def show_mels(mels: list[array]): # List of melspectrograms
     plt.show()
     plt.close()
 
-# %% ../nbs/03_visualize.ipynb 13
+# %% ../nbs/03_visualize.ipynb 14
 def plot_phoneme_durations(phonemes: list[str], # A list of phoneme strings
                            durations: list[float], # A list of durations that align with phonemes
                            ax: Axes = None): # A matplotlib Axes to overlay over
@@ -52,7 +52,7 @@ def plot_phoneme_durations(phonemes: list[str], # A list of phoneme strings
     if ax is None:
         plt.show()
 
-# %% ../nbs/03_visualize.ipynb 16
+# %% ../nbs/03_visualize.ipynb 17
 def plot_loss(loss: list, # The list containing loss measurements
               title: str = "training"): # Which set of loss you are plotting
     plt.plot(loss)
