@@ -42,7 +42,7 @@ class TransformerScheduler:
 
 # %% ../nbs/06_training.ipynb 8
 class FastspeechLearner:
-    def __init__(self, dl, norm: DataLoader, Model, Optimizer, Scheduler, 
+    def __init__(self, dl: DataLoader, norm, Model, Optimizer, Scheduler, 
                  config: dict, loss_fn_a, loss_fn_b, accum_grad: int=1, 
                  grad_clip: float=1., fp_16: bool=False, log_interval: int=10, 
                  checkpoint_dir="../checkpoints", device=None):
