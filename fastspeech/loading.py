@@ -21,10 +21,12 @@ def load_audio(file_path: str, # Path to a file with ```.wav``` extension
     return wav
 
 # %% ../nbs/02_loading.ipynb 11
-def melspectrogram(inp: tensor, n_fft:int=1024, 
-                   hop_length:int=256, n_mels:int=80):
-    return librosa.feature.melspectrogram(y=inp, n_fft=n_fft, hop_length=hop_length, 
-                                          n_mels=n_mels)
+def melspectrogram(inp: tensor, 
+                   n_fft:int=1024, # Length of the windowed signal
+                   hl:int=256, # The hop length
+                   nb:int=80): # Number of mel bins
+    return librosa.feature.melspectrogram(y=inp, n_fft=n_fft, hop_length=hl, 
+                                          n_mels=nb)
 
 # %% ../nbs/02_loading.ipynb 14
 def replace_extension(path: str, # File path

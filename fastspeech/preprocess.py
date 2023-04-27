@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['map_tensors', 'Vocab', 'phones_list_to_num', 'pad_phones', 'trim_audio', 'pad_mels', 'round_and_align_durations',
-           'pad_duration', 'flatten_and_concat', 'ZScoreNormalization', 'MinMaxNormalization']
+           'pad_duration', 'flatten_and_concat', 'ZScoreNormalization', 'MinMaxNormalization', 'transform_inp']
 
 # %% ../nbs/04_preprocess.ipynb 3
 from pathlib import Path
@@ -89,8 +89,11 @@ def round_and_align_durations(duration: tensor, mel_len: int):
     return rounded_duration
 
 # %% ../nbs/04_preprocess.ipynb 30
-def pad_duration(duration):
-    return pad_sequence(duration, batch_first=True)
+def pad_duration(duration: list[tensor], mel_len: int):
+    padded_duration = pad_sequence(duration, batch_first=True)
+    padded_duration_amount = [mel_len - dur.sum().item() for dur in duration]
+    padded_duration[:, -1] = tensor(padded_duration_amount)
+    return padded_duration
 
 # %% ../nbs/04_preprocess.ipynb 33
 def flatten_and_concat(arrays: list[array]):
@@ -122,3 +125,10 @@ class MinMaxNormalization:
     
     def denormalize(self, inp):
         return inp * (self.max_val - self.min_val) + self.min_val
+
+# %% ../nbs/04_preprocess.ipynb 40
+def transform_inp(inp, transform_list: list):
+    x = inp
+    for transform in transform_list:
+        x = transform(inp)
+    return x
