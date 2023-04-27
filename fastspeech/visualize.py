@@ -19,8 +19,10 @@ def plot_wav(wav: array): # The tensor of sampled waveform
     plt.ylabel("Amplitude")
 
 # %% ../nbs/03_visualize.ipynb 9
-def show_mel(mel: array): # A melspectrogram array
+def show_mel(mel: array, title: str=""):
     plt.imshow(librosa.power_to_db(mel), origin="lower")
+    plt.title(title)
+    plt.show()
 
 # %% ../nbs/03_visualize.ipynb 11
 def show_mels(mels: list[array]): # List of melspectrograms
