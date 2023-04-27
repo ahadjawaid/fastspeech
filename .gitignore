@@ -1,6 +1,8 @@
 _docs/
 _proc/
 
+checkpoints/
+
 *.bak
 .gitattributes
 .last_checked
