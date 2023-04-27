@@ -105,7 +105,8 @@ class FastspeechLearner:
                 
                 if curr_steps % self.log_interval == 0 or curr_steps == steps:
                     with torch.no_grad(): 
-                        pred_mel, _ = self.model(val_phone, val_duration)
+                        pred_mel, _ = self.model(val_phone.to(self.device), 
+                                                 val_duration.to(self.device))
                         pred_mel = self.norm.denormalize(pred_mel).cpu()
                     
                     save_path = Path(self.checkpoint_dir)/f"save_{self.save_num}"
