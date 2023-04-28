@@ -115,7 +115,10 @@ class FastspeechLearner:
                     self.save_model(save_path)
         
                     self.mel_history.append(pred_mel)
-                    title = f"step: {curr_steps}, loss: {loss_a:.4f}"
+                    loss_slice = slice(min(0, curr_steps-log_interval,
+                                           curr_steps))
+                    avg_loss = tensor(self.mel_history["a"][loss_slice]).mean()
+                    title = f"step: {curr_steps}, loss: {avg_loss:.4f}"
                     show_mel(pred_mel[0], title)
                     
         progress_bar.close()

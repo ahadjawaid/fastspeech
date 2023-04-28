@@ -24,7 +24,7 @@ def plot_wav(wav: array): # The tensor of sampled waveform
 def show_mel(mel: array, title: str="", ax=None, show=True):
     if ax == None: fig, ax = plt.subplots()
     ax.imshow(librosa.power_to_db(mel), origin="lower")
-    ax.title(title)
+    plt.title(title)
     if show: plt.show()
 
 # %% ../nbs/03_visualize.ipynb 11
