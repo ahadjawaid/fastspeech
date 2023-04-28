@@ -10,6 +10,8 @@ from matplotlib.axes._axes import Axes
 from .loading import load_audio
 from matplotlib.patches import Rectangle
 from numpy import array
+from matplotlib.animation import FuncAnimation
+from IPython.display import HTML
 
 # %% ../nbs/03_visualize.ipynb 7
 def plot_wav(wav: array): # The tensor of sampled waveform
