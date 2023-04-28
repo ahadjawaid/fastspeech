@@ -125,20 +125,20 @@ def flatten_and_concat(arrays: list[array]):
 
 # %% ../nbs/04_preprocess.ipynb 40
 class ZScoreNormalization:
-    def __init__(self, mean: float, std: float):
+    def __init__(self, mean: float, std: float, *args, **kwargs):
         '''Creates a normalization object that allows for normalization and 
         denormalization'''
         self.mean, self.std = mean, std
         
     def normalize(self, inp: tensor):
-        return (inp - mean) / std
+        return (inp - self.mean) / self.std
     
     def denormalize(self, inp: tensor):
-        return inp * std + mean
+        return inp * self.std + self.mean
 
 # %% ../nbs/04_preprocess.ipynb 42
 class MinMaxNormalization:
-    def __init__(self, max_val: float, min_val: float):
+    def __init__(self, max_val: float, min_val: float, *args, **kwargs):
         '''Creates a normalization object that allows for normalization and 
         denormalization'''
         self.max_val, self.min_val = max_val, min_val
