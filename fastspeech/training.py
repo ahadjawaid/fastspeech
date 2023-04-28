@@ -85,7 +85,7 @@ class FastspeechLearner:
         curr_steps = 0
         
         val_phone, val_duration, val_mel = next(iter(self.dl))
-        show_mel(self.norm.denormalize(val_mel)[0])
+        show_mel(self.norm.denormalize(val_mel)[0], "validation")
               
         progress_bar = tqdm(total=steps, desc="Training", unit="step")
         while curr_steps < steps:
@@ -115,7 +115,7 @@ class FastspeechLearner:
                     self.save_model(save_path)
         
                     self.mel_history.append(pred_mel)
-                    title = f"step: {curr_steps}, loss: {loss_a:.2f}"
+                    title = f"step: {curr_steps}, loss: {loss_a:.4f}"
                     show_mel(pred_mel[0], title)
                     
         progress_bar.close()
@@ -125,7 +125,7 @@ class FastspeechLearner:
         self.loss_history['b'].append(loss_b)
         
         progress_bar.update(1)
-        loss_output = {"m_loss": f"{loss_a:.2f}", 
+        loss_output = {"m_loss": f"{loss_a:.4f}", 
                        "d_loss": f"{loss_b:.2f}"}
         progress_bar.set_postfix(loss_output, refresh=True)
         
