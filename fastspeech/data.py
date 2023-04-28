@@ -17,6 +17,7 @@ class TTSDataset(Dataset):
     def __init__(self, 
                  path_data: str, 
                  path_vocab: str, 
+                 Norm, # A Normalization class
                  sr: int=22050, # Sampling rate
                  n_fft: int=1024, # Length of the windowed signal
                  hl: int=256, # The hop length
@@ -32,7 +33,7 @@ class TTSDataset(Dataset):
         self.load_audio = partial(load_audio, sr=sr)
         self.melspectrogram = partial(melspectrogram, n_fft=n_fft, hl=hl, nb=nb)
         self.get_phones_and_durations = partial(get_phones_and_durations, sr=sr, hl=hl)
-        self.norm = MinMaxNormalization(stats['max'], stats['min'])
+        self.norm = Norm(**stats)
         
         self.files = get_audio_files(path_data)[ds]
         self.files_tg = self.files.map(replace_to_tg)
@@ -81,7 +82,8 @@ class TTSDataset(Dataset):
 # %% ../nbs/05_data.ipynb 8
 def compute_statistics(data: list[tensor]):
     flat = flatten_and_concat(data)
-    return {"min": flat.min(), "max": flat.max(), "mean": flat.mean(), "std": flat.std()}
+    return {"min_val": flat.min(), "max_val": flat.max(), 
+            "mean": flat.mean(), "std": flat.std()}
 
 # %% ../nbs/05_data.ipynb 10
 def collate_fn(inp, pad_num: int, norm):
