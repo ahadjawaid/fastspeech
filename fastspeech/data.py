@@ -53,16 +53,14 @@ class TTSDataset(Dataset):
             self.phones, self.durations = zip(*self.files_tg.map(
                                               self.get_phones_and_durations))
             
-            self.phones = pad_max_seq(map_tensors(transform_inp(self.phones, 
-                                                                self.pho_transform)))
+            self.phones = map_tensors(transform_inp(self.phones, self.pho_transform))
             
             self.mels = map_tensors(self.wavs.map(self.melspectrogram).map(
                         transform_inp, transform_list=self.mel_tranform))
             mel_lens = list(map(lambda x: x.shape[-1], self.mels))
             
-            self.durations = pad_max_seq(map_tensors(self.durations))
             self.durations = [round_and_align_durations(d, mel_lens[i]) 
-                              for i, d in enumerate(self.durations)]
+                              for i, d in enumerate(map_tensors(self.durations))]
     def __getitem__(self, idx):
         if self.preload:
             return self.phones[idx], self.durations[idx], self.mels[idx]
@@ -71,9 +69,9 @@ class TTSDataset(Dataset):
         mel = tensor(transform_inp(self.melspectrogram(wav), self.mel_tranform))
         
         phones, duration = self.get_phones_and_durations(self.files_tg[idx])
-        phones = pad_max_seq(tensor(transform_inp(phones, self.pho_transform)).squeeze())
+        phones = tensor(transform_inp(phones, self.pho_transform)).squeeze()
 
-        duration = round_and_align_durations(pad_max_seq(tensor(duration)), mel.shape[-1])
+        duration = round_and_align_durations(tensor(duration), mel.shape[-1])
         
         return phones, duration, mel
     
@@ -90,7 +88,12 @@ def collate_fn(inp, pad_num: int, norm):
     phones, durations, mels = zip(*inp)
     norm_zero = norm.normalize(0)
     
-    mel_batched, phones_batched = pad_mels(mels, norm_zero), pad_phones(phones, pad_num)
-    duration_batched = pad_duration(durations, mel_batched.shape[-1])
+    mel_batched = pad_mels(mels, norm_zero)
+    phones_batched = pad_phones(pad_max_seq(phones), pad_num)
+    mel_len = mel_batched.shape[-1]
     
+    duration_batched = pad_duration(pad_max_seq(durations), mel_batched.shape[-1])
+    
+    assert phones_batched.shape == duration_batched.shape
+    assert len(duration_batched.sum(dim=1).unique()) == 1
     return phones_batched, duration_batched, mel_batched
