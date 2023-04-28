@@ -23,7 +23,7 @@ def get_positional_embeddings(seq_len, # The length of the sequence
     pos_emb[0::2,:], pos_emb[1::2,:] = angle[0::2,:].sin(), angle[1::2,:].cos()
     return pos_emb
 
-# %% ../nbs/01_modules.ipynb 18
+# %% ../nbs/01_modules.ipynb 22
 class MultiHeadAttention(nn.Module):
     '''The Multi-Head Attention component comes from the 
     [Attention Is All You Need](https://arxiv.org/abs/1706.03762) paper. 
@@ -36,8 +36,8 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.nh = nh
         self.scale = math.sqrt(ni / nh)
-        self.kqv = nn.Linear(ni, ni*3)
-        self.proj = nn.Linear(ni, ni)
+        self.kqv = Linear(ni, ni*3)
+        self.proj = Linear(ni, ni)
         
     def forward(self, inp: tensor):
         x = self.kqv(inp)
@@ -50,7 +50,7 @@ class MultiHeadAttention(nn.Module):
         x = self.proj(x)
         return x
 
-# %% ../nbs/01_modules.ipynb 21
+# %% ../nbs/01_modules.ipynb 25
 class ConvNetwork(nn.Module):
     '''The Convolution network consists of two Conv1D layers with the 
     intermediate dimension being named the filter size.'''
@@ -62,8 +62,8 @@ class ConvNetwork(nn.Module):
         super().__init__()
         assert len(ks) == 2
         padding = list(map(lambda x: (x - 1) // 2, ks))
-        self.layers = nn.ModuleList([nn.Conv1d(ni, fs, ks[0], padding=padding[0]),
-                                     nn.Conv1d(fs, ni, ks[1], padding=padding[1])])
+        self.layers = nn.ModuleList([Conv1d(ni, fs, ks[0], padding=padding[0]),
+                                     Conv1d(fs, ni, ks[1], padding=padding[1])])
         
     def forward(self, inp: tensor):
         x = inp.transpose(1,2)
@@ -71,7 +71,7 @@ class ConvNetwork(nn.Module):
             x = F.relu(layer(x))
         return x.transpose(1,2)
 
-# %% ../nbs/01_modules.ipynb 24
+# %% ../nbs/01_modules.ipynb 28
 class FeedForwardTransformer(nn.Module):
     ''''''
     def __init__(self, 
@@ -97,7 +97,7 @@ class FeedForwardTransformer(nn.Module):
             res = x
         return x
 
-# %% ../nbs/01_modules.ipynb 25
+# %% ../nbs/01_modules.ipynb 29
 class FFTConfig:
     '''To allow for easily configurable FFT modules we decided to create a FFTConfig
     to allow for more readable, and customizable code when creating FFT'''
@@ -112,7 +112,7 @@ class FFTConfig:
     def build(self):
         return FeedForwardTransformer(self.ni, self.nh, self.fs, self.ks, self.p)
 
-# %% ../nbs/01_modules.ipynb 29
+# %% ../nbs/01_modules.ipynb 33
 class DurationPredictor(nn.Module):
     '''This module predicts the logarithmic duration length for each phoneme 
     based on the phoneme hidden features. It consists of 2-layer 1D convolutional network 
@@ -128,11 +128,11 @@ class DurationPredictor(nn.Module):
         assert len(ks) == 2 and len(p) == 2
         
         padding = list(map(lambda x: (x - 1) // 2, ks))
-        self.layers = nn.ModuleList([nn.Conv1d(ni, fs, ks[0], padding=padding[0]),
-                                     nn.Conv1d(fs, ni, ks[1], padding=padding[1])])
+        self.layers = nn.ModuleList([Conv1d(ni, fs, ks[0], padding=padding[0]),
+                                     Conv1d(fs, ni, ks[1], padding=padding[1])])
         self.norms = nn.ModuleList([nn.LayerNorm(sz) for sz in [fs, ni]])
         self.dropouts = nn.ModuleList([nn.Dropout(p[i]) for i in range(2)])
-        self.linear = nn.Linear(ni, 1)
+        self.linear = Linear(ni, 1)
     
     def forward(self, hi: tensor):
         x = hi
@@ -144,7 +144,7 @@ class DurationPredictor(nn.Module):
         x = self.linear(x)
         return x.squeeze()
 
-# %% ../nbs/01_modules.ipynb 30
+# %% ../nbs/01_modules.ipynb 34
 class DPConfig:
     '''To allow for easily configurable Deration Predictor modules we 
     decided to create a DPConfig to allow for more readable, 
@@ -159,7 +159,7 @@ class DPConfig:
     def build(self):
         return DurationPredictor(self.ni, self.fs, self.ks, self.p)
 
-# %% ../nbs/01_modules.ipynb 34
+# %% ../nbs/01_modules.ipynb 38
 def length_regulator(hi: tensor, # The hidden phoneme features
                      durations: tensor, # The phoneme durations to upsample to
                      upsample_ratio: float, # The multiplier ratio of upsampling rate
@@ -174,7 +174,7 @@ def length_regulator(hi: tensor, # The hidden phoneme features
         ho[i] = hi[i].repeat_interleave(durations[i], dim=0)
     return ho
 
-# %% ../nbs/01_modules.ipynb 38
+# %% ../nbs/01_modules.ipynb 42
 class FastSpeech(nn.Module):
     ''''''
     def __init__(self, 
@@ -194,7 +194,7 @@ class FastSpeech(nn.Module):
         self.encoder = nn.Sequential(*[ec.build() for _ in range(enb)])
         self.decoder = nn.Sequential(*[dc.build() for _ in range(dnb)])
         self.duration_predictor = dpc.build()
-        self.linear = nn.Linear(ni, no)
+        self.linear = Linear(ni, no)
         
     def forward(self, inp: tensor, # The input phonemes in vectorized form
                 durations: tensor = None, # The phoneme durations, used for training
