@@ -234,7 +234,7 @@ class FastSpeech(nn.Module):
         x = x +  get_positional_embeddings(*x.shape[-2:], device=self.device)
         x = self.encoder(x)
 
-        log_durations = self.duration_predictor(x)
+        log_durations = self.duration_predictor(x.detach())
         if durations == None or not self.training:
             durations = log_durations.exp()
         x = length_regulator(x, durations, upsample_ratio, device=self.device)
