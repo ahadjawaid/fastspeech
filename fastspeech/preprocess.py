@@ -46,7 +46,7 @@ class Vocab:
     def __init__(self, 
                  vocab_path: str, # The path to vocabulary file containing all the words in the vocabulary
                  specials: list =[]): # The special tokens not in the vocabulary file
-        pad_token = "<pad>"
+        pad_token = "spn"
         self.vocab = self._load_vocab(vocab_path) + [pad_token] + specials
         self.tok2idx = {tok: i for i, tok in enumerate(self.vocab)}
         self.pad_num = self.tok2idx[pad_token]
