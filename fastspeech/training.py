@@ -74,8 +74,8 @@ class FastspeechLearner:
             loss_a = self.loss_fn_a(pred_mels, mels)
             loss_b =  self.loss_fn_b(pred_log_durations[d_slice], log_durations[d_slice])
             loss_c = self.loss_fn_a(res, mels)
+            total_loss = loss_a + loss_b + loss_c        
         
-        total_loss = loss_a + loss_b + loss_c
         self.scaler.scale(total_loss).backward()
         
         clip_grad_value_(self.model.parameters(), self.grad_clip)
