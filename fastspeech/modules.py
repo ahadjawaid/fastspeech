@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['get_positional_embeddings', 'Conv1d', 'Linear', 'MultiHeadAttention', 'ConvNetwork', 'FeedForwardTransformer',
-           'FFTConfig', 'DurationPredictor', 'DPConfig', 'length_regulator', 'FastSpeech']
+           'DurationPredictor', 'length_regulator', 'PostNet', 'Config', 'FastSpeech']
 
 # %% ../nbs/01_modules.ipynb 3
 import torch
@@ -25,13 +25,17 @@ def get_positional_embeddings(seq_len, # The length of the sequence
 
 # %% ../nbs/01_modules.ipynb 18
 class Conv1d(nn.Conv1d):
+    ''''''
     def __init__(self, *args, **kwargs):
+        ''''''
         super().__init__(*args, **kwargs)
         nn.init.xavier_uniform_(self.weight, nn.init.calculate_gain('linear'))
 
 # %% ../nbs/01_modules.ipynb 20
 class Linear(nn.Linear):
+    ''''''
     def __init__(self, *args, **kwargs):
+        ''''''
         super().__init__(*args, **kwargs)
         nn.init.xavier_uniform_(self.weight, nn.init.calculate_gain('linear'))
 
@@ -109,22 +113,7 @@ class FeedForwardTransformer(nn.Module):
             res = x
         return x
 
-# %% ../nbs/01_modules.ipynb 29
-class FFTConfig:
-    '''To allow for easily configurable FFT modules we decided to create a FFTConfig
-    to allow for more readable, and customizable code when creating FFT'''
-    def __init__(self, 
-                 ni: int, # The input size
-                 nh: int, # The number of attention heads
-                 fs: int, # Filter size for intermediate dimension
-                 ks: list[int], # A two element list of kernal sizes
-                 p: list[float]): # A two element list of dropout probabilities
-        self.ni, self.nh, self.fs, self.ks, self.p = ni, nh, fs, ks, p
-    
-    def build(self):
-        return FeedForwardTransformer(self.ni, self.nh, self.fs, self.ks, self.p)
-
-# %% ../nbs/01_modules.ipynb 33
+# %% ../nbs/01_modules.ipynb 32
 class DurationPredictor(nn.Module):
     '''This module predicts the logarithmic duration length for each phoneme 
     based on the phoneme hidden features. It consists of 2-layer 1D convolutional network 
@@ -142,36 +131,21 @@ class DurationPredictor(nn.Module):
         padding = list(map(lambda x: (x - 1) // 2, ks))
         self.layers = nn.ModuleList([Conv1d(ni, fs, ks[0], padding=padding[0]),
                                      Conv1d(fs, ni, ks[1], padding=padding[1])])
-        self.norms = nn.ModuleList([nn.LayerNorm(sz) for sz in [fs, ni]])
+        self.norms = nn.ModuleList([nn.BatchNorm1d(sz) for sz in [fs, ni]])
         self.dropouts = nn.ModuleList([nn.Dropout(p[i]) for i in range(2)])
         self.linear = Linear(ni, 1)
     
     def forward(self, hi: tensor):
-        x = hi
+        x = hi.transpose(1, 2)
         modules = zip(self.layers, self.norms, self.dropouts)
         for layer, norm, dropout in modules:
-            x = layer(x.transpose(1, 2))
+            x = layer(x)
             x = dropout(F.relu(x))
-            x = norm(x.transpose(1,2))
-        x = self.linear(x)
+            x = norm(x)
+        x = self.linear(x.transpose(1,2))
         return x.squeeze()
 
-# %% ../nbs/01_modules.ipynb 34
-class DPConfig:
-    '''To allow for easily configurable Deration Predictor modules we 
-    decided to create a DPConfig to allow for more readable, 
-    and customizable code when creating Duration Predcitor modules'''
-    def __init__(self, 
-                 ni: int, # Input dimension
-                 fs: int, # Filter size for intermediate dimension
-                 ks: list[int], # A two element list of kernal sizes
-                 p: list[float]): # A two element list of dropout probabilities
-        self.ni, self.fs, self.ks, self.p = ni, fs, ks, p
-    
-    def build(self):
-        return DurationPredictor(self.ni, self.fs, self.ks, self.p)
-
-# %% ../nbs/01_modules.ipynb 38
+# %% ../nbs/01_modules.ipynb 36
 def length_regulator(hi: tensor, # The hidden phoneme features
                      durations: tensor, # The phoneme durations to upsample to
                      upsample_ratio: float, # The multiplier ratio of upsampling rate
@@ -186,27 +160,72 @@ def length_regulator(hi: tensor, # The hidden phoneme features
         ho[i] = hi[i].repeat_interleave(durations[i], dim=0)
     return ho
 
+# %% ../nbs/01_modules.ipynb 40
+class PostNet(nn.Module):
+    def __init__(self,
+                 ni: int, # Input dimension 
+                 fs: int, # Filter size for intermediate dimension
+                 ks: int,# Kernal size
+                 p: float, # Dropout probability
+                 nl: int = 5): # The number of convolution layers
+        super().__init__()
+        padding = (ks - 1) // 2
+        self.layers = nn.ModuleList([Conv1d(ni, fs, ks, padding=padding),
+                                   *[Conv1d(fs, fs, ks, padding=padding) 
+                                       for i in range(nl-2)],
+                                     Conv1d(fs, ni, ks, padding=padding)])
+        self.norms = nn.ModuleList([*[nn.BatchNorm1d(fs) for i in range(nl-1)],
+                                     nn.BatchNorm1d(ni)])
+        self.dropout = nn.Dropout(p)
+        
+    def forward(self, inp):
+        x = inp
+        
+        modules = zip(self.layers, self.norms)
+        for i, (layer, norm) in enumerate(modules):
+            x = layer(x)
+            x = norm(x)
+            x = F.tanh(x) if i < len(self.layers) - 1 else x
+            x = self.dropout(x)
+            
+        return x
+
 # %% ../nbs/01_modules.ipynb 42
+class Config:
+    '''To allow for easily configurable modules we 
+    decided to create a Config to allow for more readable, 
+    and customizable code when creating modules'''
+    def __init__(self, Module, # The module you want to initalize
+                 *args, **kwargs): 
+        self.Module = Module
+        self.args, self.kwargs = [*args], {**kwargs}
+    
+    def build(self):
+        return self.Module(*self.args, **self.kwargs)
+
+# %% ../nbs/01_modules.ipynb 44
 class FastSpeech(nn.Module):
     ''''''
     def __init__(self, 
                  ne: int, # Number of embeddings (vocab size) 
                  ni: int, # The number of hidden dimension
                  no: int, # The number of outputs bins (mel bins)
-                 ec: FFTConfig, # Encoder config 
-                 enb: int, # The number of FFT in encoder
-                 dc: FFTConfig, # Decoder config
-                 dnb: int, #The number of FFT in decoder
-                 dpc: DPConfig, # Duration Predictor config
+                 encoder_c: Config, # Encoder config 
+                 n_e_fft: int, # The number of FFT in encoder
+                 decoder_c: Config, # Decoder config
+                 n_d_fft: int, # The number of FFT in decoder
+                 duration_c: Config, # Duration Predictor config
+                 postnet_c: Config,
                  device=None):
         ''''''
         super().__init__()
         self.device = device
         self.embedding = nn.Embedding(ne, ni)
-        self.encoder = nn.Sequential(*[ec.build() for _ in range(enb)])
-        self.decoder = nn.Sequential(*[dc.build() for _ in range(dnb)])
-        self.duration_predictor = dpc.build()
+        self.encoder = nn.Sequential(*[encoder_c.build() for _ in range(n_e_fft)])
+        self.decoder = nn.Sequential(*[decoder_c.build() for _ in range(n_d_fft)])
+        self.duration_predictor = duration_c.build()
         self.linear = Linear(ni, no)
+        self.postnet = postnet_c.build()
         
     def forward(self, inp: tensor, # The input phonemes in vectorized form
                 durations: tensor = None, # The phoneme durations, used for training
@@ -215,13 +234,18 @@ class FastSpeech(nn.Module):
         x = x +  get_positional_embeddings(*x.shape[-2:], device=self.device)
         x = self.encoder(x)
 
-        log_durations = self.duration_predictor(x.detach())
+        log_durations = self.duration_predictor(x)
         if durations == None or not self.training:
             durations = log_durations.exp()
         x = length_regulator(x, durations, upsample_ratio, device=self.device)
         
-        x = x +  get_positional_embeddings(*x.shape[-2:], device=self.device)
+        x = x + get_positional_embeddings(*x.shape[-2:], device=self.device)
         x = self.decoder(x)
         x = self.linear(x).transpose(1,2)
         
-        return (x, log_durations) if self.training else x        
+        res = self.postnet(x)
+        x = (x + res)
+        
+        x = x
+        
+        return (x, log_durations, res) if self.training else x        
