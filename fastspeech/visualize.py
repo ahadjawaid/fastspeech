@@ -46,7 +46,7 @@ class MelAnimation:
     def _view_one(self, d):
         if d: self.i += 1
         self.ax.clear()
-        show_mel(self.mels[self.i], self.ax)
+        show_mel(self.mels[self.i], self.ax, show=False)
         
     def animate_mels(self):
         self.fig, self.ax= plt.subplots()
