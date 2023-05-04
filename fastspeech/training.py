@@ -79,7 +79,8 @@ class FastspeechLearner:
         d_slice = (slice(None), slice(None, -1))
         pred_mels, pred_log_durations = self.model(phones, durations)
         loss_a = self.loss_fn_a(pred_mels, mels)
-        loss_b =  self.loss_fn_b(pred_log_durations[d_slice], log_durations[d_slice])
+        loss_b =  self.loss_fn_b(pred_log_durations[d_slice], 
+                                 log_durations[d_slice].squeeze())
         
         return loss_a, loss_b
 
@@ -184,6 +185,6 @@ def count_parameters(model: torch.nn.Module):
     return  sum([p.numel() for p in model.parameters() if p.requires_grad])
 
 # %% ../nbs/06_training.ipynb 15
-def load_checkpoint(file_path: str):
-    checkpoint = torch.load(file_path)
+def load_checkpoint(file_path: str, device='cpu'):
+    checkpoint = torch.load(file_path, map_location=torch.device(device))
     return checkpoint["state_dict"], checkpoint["config"], checkpoint["norm"]

@@ -142,7 +142,7 @@ class DurationPredictor(nn.Module):
             x = self.dropout(F.relu(x))
             x = norm(x.transpose(1,2))
         x = self.linear(x)
-        return x.squeeze()
+        return x.squeeze(-1)
 
 # %% ../nbs/01_modules.ipynb 36
 def length_regulator(hi: tensor, # The hidden phoneme features
@@ -151,7 +151,7 @@ def length_regulator(hi: tensor, # The hidden phoneme features
                      device: torch.device = None): # Device you want to use
     assert len(durations.sum(dim=1).unique()) == 1
     durations = (upsample_ratio * durations).to(torch.int)
-    
+
     (bs, _, nh), sl = hi.shape, durations[0].sum().item()
     
     ho = torch.zeros((bs, sl, nh), device=device)
