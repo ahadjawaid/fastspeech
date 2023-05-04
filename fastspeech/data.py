@@ -38,11 +38,11 @@ class TTSDataset(Dataset):
         self.files = get_audio_files(path_data)[ds]
         self.files_tg = self.files.map(replace_to_tg)
         
-        self.vocab = Vocab(path_vocab)
+        self.vocab = Vocab(path_vocab, ["spn"])
         
         self.pho_transform = [partial(phones_list_to_num, vocab=self.vocab)]
         self.wav_transfom = [partial(trim_audio, top_db=self.stats["top_db"], 
-                                n_fft=n_fft, hl=hl)]
+                             n_fft=n_fft, hl=hl)]
         self.mel_tranform = [self.norm.normalize]
         
         

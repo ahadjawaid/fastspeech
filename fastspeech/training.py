@@ -43,7 +43,7 @@ class TransformerScheduler:
 # %% ../nbs/06_training.ipynb 8
 class FastspeechLearner:
     def __init__(self, dl: DataLoader, norm, Model, Optimizer, Scheduler, 
-                config: dict, loss_fn_a, loss_fn_b, 
+                config: dict, loss_fn_a, loss_fn_b, loss_fn_c,
                  dl_v: DataLoader = None, accum_grad: int=1, 
                  grad_clip: float=1., fp_16: bool=False, log_interval: int=10, 
                  checkpoint_dir="../checkpoints", device=None):
@@ -51,11 +51,12 @@ class FastspeechLearner:
         self.dl, self.norm, self.config = dl, norm, config
         self.dl_v = dl_v
         self.checkpoint_dir = Path(checkpoint_dir)
-        self.model = Model(**config["model"]).to(device)
+        self.model = Model(config["model"], device=device).to(device)
         self.optim = Optimizer(self.model.parameters(), **config["optim"])
         self.scheduler = Scheduler(self.optim, **config["scheduler"])
         
         self.loss_fn_a, self.loss_fn_b = loss_fn_a, loss_fn_b
+        self.loss_fn_c = loss_fn_c
         
         self.accum_grad, self.grad_clip = accum_grad, grad_clip
         self.fp_16, self.log_interval = fp_16, log_interval
@@ -63,8 +64,8 @@ class FastspeechLearner:
         
         self.save_num = 0
         self.mel_history = []
-        self.loss_history = []
-        self.loss_valid_history = []
+        self.loss_history = {"a": [], "b": []}
+        self.loss_valid_history = {"a": [], "b": []}
     
     def map_to_device(self, inp: list):
         return list(map(lambda x: x.to(self.device), inp))
@@ -76,33 +77,35 @@ class FastspeechLearner:
         
     def compute_loss(self, phones, durations, mels, log_durations):
         d_slice = (slice(None), slice(None, -1))
-        pred_mels, pred_log_durations, res = self.model(phones, durations)
+        pred_mels, pred_log_durations = self.model(phones, durations)
         loss_a = self.loss_fn_a(pred_mels, mels)
         loss_b =  self.loss_fn_b(pred_log_durations[d_slice], log_durations[d_slice])
-        loss_c = self.loss_fn_a(res, mels)
-        loss = loss_a + loss_b + loss_c 
         
-        return loss
+        return loss_a, loss_b
 
     def one_step(self, inp: tuple):
         phones, durations, mels, log_durations = self.process_batch(inp)
         self.optim.zero_grad()
         
         with autocast(enabled=self.fp_16):
-            loss = self.compute_loss(phones, durations, mels, log_durations)     
+            loss_a, loss_b = self.compute_loss(phones, durations, mels, 
+                                               log_durations)
+            loss = loss_a + loss_b
         
         self.scaler.scale(loss).backward()
         
         clip_grad_value_(self.model.parameters(), self.grad_clip)
         
-        return loss.detach()
+        return loss_a.detach(), loss_b.detach()
     
     def append_valid_loss(self):
         for batch in self.dl_v:
             phones, durations, mels, log_durations = self.process_batch(batch)
             with torch.no_grad():
-                loss = self.compute_loss(phones, durations, mels, log_durations)
-            self.loss_valid_history.append(loss.cpu())
+                loss_a, loss_b = self.compute_loss(phones, durations, mels, 
+                                                           log_durations)
+            self.loss_valid_history['a'].append(loss_a.cpu())
+            self.loss_valid_history['b'].append(loss_b.cpu())
     
     def fit(self, steps: int):
         curr_steps = 0
@@ -115,7 +118,7 @@ class FastspeechLearner:
             for batch in self.dl:
                 if curr_steps > steps: break
                     
-                loss = self.one_step(batch)
+                loss_a, loss_b = self.one_step(batch)
                 
                 if curr_steps % self.accum_grad == 0 or (curr_steps+1) == len(self.dl):
                     self.scaler.step(self.optim)
@@ -123,21 +126,25 @@ class FastspeechLearner:
                     self.scheduler.step()
                 
                 curr_steps += 1
-                loss = loss.cpu()
-                self._update_bar_and_history(progress_bar, loss)
+                self._update_bar(progress_bar, loss_a, loss_b)
+                self.loss_history['a'].append(loss_a.cpu())
+                self.loss_history['b'].append(loss_b.cpu())
                 
                 if curr_steps % self.log_interval == 0 or curr_steps == steps:
                     with torch.no_grad(): 
                         val_phone, val_duration = self.map_to_device([val_phone, 
                                                                       val_duration])
-                        pred_mel, _, _ = self.model(val_phone, val_duration)
+                        pred_mel, _ = self.model(val_phone, val_duration)
                         pred_mel = self.norm.denormalize(pred_mel).cpu()
+                        
+                    self.mel_history.append(pred_mel)
                     
                     loss_valid_text = ''
                     if self.dl_v:
                         self.append_valid_loss()
-                        avg_loss_valid = tensor(self.loss_valid_history[len(dl_v):]).mean()
-                        loss_valid_text = f", loss: {avg_loss_valid:.4f}"
+                        avg_loss_valid = tensor(
+                            self.loss_valid_history['a'][-len(self.dl_v):]).mean()
+                        loss_valid_text = f", valid loss: {avg_loss_valid:.4f}"
                     
                     if not self.checkpoint_dir.exists():
                         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -145,22 +152,17 @@ class FastspeechLearner:
                     self.save_num += 1
                     self.save_model(save_path)
         
-                    self.mel_history.append(pred_mel)
-            
-                    loss_slice = slice(min(0, curr_steps-self.log_interval), curr_steps)
-                    avg_loss = tensor(self.loss_history[loss_slice]).mean()
-                    
-                    
+                    loss_slice = slice(-self.log_interval, None)
+                    avg_loss = tensor(self.loss_history['a'][loss_slice]).mean()
+                         
                     title = f"step: {curr_steps}, loss: {avg_loss:.4f}{loss_valid_text}"
                     show_mel(pred_mel[0], title)
                     
         progress_bar.close()
         
-    def _update_bar_and_history(self, progress_bar, loss):
-        self.loss_history.append(loss)
-        
+    def _update_bar(self, progress_bar, loss_a, loss_b):
         progress_bar.update(1)
-        loss_output = {"loss": f"{loss:.4f}"}
+        loss_output = {"loss_mel": f"{loss_a:.4f}", "loss_durr": f"{loss_b:.2f}"}
         progress_bar.set_postfix(loss_output, refresh=True)
         
     def save_model(self, file_path):
