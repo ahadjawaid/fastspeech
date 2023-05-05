@@ -181,7 +181,7 @@ class PostNet(nn.Module):
         for i, (layer, norm) in enumerate(modules):
             x = layer(x)
             x = norm(x)
-            x = F.tanh(x) if i < len(self.layers) - 1 else x
+            x = torch.tanh(x) if i < len(self.layers) - 1 else x
             x = self.dropout(x)
             
         return x

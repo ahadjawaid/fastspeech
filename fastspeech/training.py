@@ -80,7 +80,7 @@ class FastspeechLearner:
         pred_mels, pred_log_durations = self.model(phones, durations)
         loss_a = self.loss_fn_a(pred_mels, mels)
         loss_b =  self.loss_fn_b(pred_log_durations[d_slice], 
-                                 log_durations[d_slice].squeeze())
+                                 durations[d_slice].squeeze())
         
         return loss_a, loss_b
 
