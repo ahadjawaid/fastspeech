@@ -7,3 +7,6 @@ website:
       - 03_visualize.ipynb
       - 04_preprocess.ipynb
       - 05_data.ipynb
+      - 06_training.ipynb
+      - 07-inference.ipynb
+      - training_model.ipynb

@@ -5,19 +5,47 @@
 ## Install
 
 ``` sh
-pip install fastspeech
+pip install -e '.[dev]'
 ```
 
 ## How to use
 
-``` python
-model = FastSpeech(vocab_sz, ni, n_bins, fft_config, 4, 
-                   fft_config, 4, dp_config)
+Further documentation of the modules and how to use the library can be
+found at: https://ahadjawaid.github.io/fastspeech/
 
-with torch.no_grad():
-    mels = model(vec, durations)[0]
-    
-show_mel(mels[0])
+The first step to use the model for inference is to import the model
+from a trained checkpoint
+
+``` python
+model, norm = load_model_inference(checkpoint_path)
 ```
 
-![](index_files/figure-commonmark/cell-2-output-1.png)
+Next we need to process the text to convert it into something the model
+can recognize
+
+``` python
+text = "Hi, my name is ahod and this is a demonstration of my implementation of the fast speech model"
+phones = preprocess_text(text, vocab_path)
+```
+
+Then we generate the melspectrogram using the FastSpeech model
+
+``` python
+mel = bayesian_inference(phones, model, 10)
+mel = norm.denormalize(mel)
+show_mel(mel)
+```
+
+![](index_files/figure-commonmark/cell-4-output-1.png)
+
+Lastly we use a vocoder to convert the melspectrogram to a wav file. In
+this case we are using the Griffin-Lim Algorithm to perform the inverse
+operation
+
+``` python
+sf.write(save_path, wav, sr)
+```
+
+<audio src="https://github.com/ahadjawaid/fastspeech/blob/main/sample_data/demonstration.wav?raw=true" controls>
+Your browser does not support the audio element.
+</audio>
