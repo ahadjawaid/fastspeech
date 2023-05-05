@@ -10,6 +10,9 @@ pip install -e '.[dev]'
 
 ## How to use
 
+Further documentation of the modules and how to use the library can be
+found at: https://github.com/ahadjawaid/fastspeech
+
 The first step to use the model for inference is to import the model
 from a trained checkpoint
 
