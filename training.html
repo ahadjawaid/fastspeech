@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.340">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="This module will contain the TTSDataset and the collate function used in training">
+
+<title>fastspeech - training</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+<script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="fastspeech - training">
+<meta property="og:description" content="This module will contain the TTSDataset and the collate function used in training">
+<meta property="og:image" content="https://ahadjawaid.github.io/fastspeech/06_training_files/figure-html/cell-7-output-1.png">
+<meta property="og:site-name" content="fastspeech">
+<meta property="og:image:height" content="112">
+<meta property="og:image:width" content="543">
+<meta name="twitter:title" content="fastspeech - training">
+<meta name="twitter:description" content="This module will contain the TTSDataset and the collate function used in training">
+<meta name="twitter:image" content="https://ahadjawaid.github.io/fastspeech/06_training_files/figure-html/cell-7-output-1.png">
+<meta name="twitter:image-height" content="112">
+<meta name="twitter:image-width" content="543">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">fastspeech</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools ms-auto">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./training.html">training</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">fastspeech</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./modules.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">modules</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./loading.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">loading</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./visualize.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">visualize</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./preprocess.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">preprocess</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">data</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./training.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">training</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-inference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">inference</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./training_model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">training_model.html</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#mae_loss" id="toc-mae_loss" class="nav-link active" data-scroll-target="#mae_loss">mae_loss</a></li>
+  <li><a href="#transformerscheduler" id="toc-transformerscheduler" class="nav-link" data-scroll-target="#transformerscheduler">TransformerScheduler</a></li>
+  <li><a href="#fastspeechlearner" id="toc-fastspeechlearner" class="nav-link" data-scroll-target="#fastspeechlearner">FastspeechLearner</a></li>
+  <li><a href="#count_parameters" id="toc-count_parameters" class="nav-link" data-scroll-target="#count_parameters">count_parameters</a></li>
+  <li><a href="#load_checkpoint" id="toc-load_checkpoint" class="nav-link" data-scroll-target="#load_checkpoint">load_checkpoint</a></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/ahadjawaid/fastspeech/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">training</h1>
+</div>
+
+<div>
+  <div class="description">
+    This module will contain the TTSDataset and the collate function used in training
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/training.py#L18" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="mae_loss" class="level3">
+<h3 class="anchored" data-anchor-id="mae_loss">mae_loss</h3>
+<blockquote class="blockquote">
+<pre><code> mae_loss (pred:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;,
+           target:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mae_loss(tensor([<span class="fl">1.</span>,<span class="dv">2</span>,<span class="dv">3</span>]), tensor([<span class="fl">2.</span>,<span class="fl">6.5</span>,<span class="dv">4</span>]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>tensor(2.1667)</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/training.py#L22" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="transformerscheduler" class="level3">
+<h3 class="anchored" data-anchor-id="transformerscheduler">TransformerScheduler</h3>
+<blockquote class="blockquote">
+<pre><code> TransformerScheduler (optimizer, lr_mul:float, d_model:int,
+                       n_warmup_steps:int)</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/training.py#L44" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="fastspeechlearner" class="level3">
+<h3 class="anchored" data-anchor-id="fastspeechlearner">FastspeechLearner</h3>
+<blockquote class="blockquote">
+<pre><code> FastspeechLearner (dl:torch.utils.data.dataloader.DataLoader, norm,
+                    Model, Optimizer, Scheduler, config:dict, loss_fn_a,
+                    loss_fn_b, loss_fn_c,
+                    dl_v:torch.utils.data.dataloader.DataLoader=None,
+                    accum_grad:int=1, grad_clip:float=1.0,
+                    fp_16:bool=False, log_interval:int=10,
+                    checkpoint_dir='../checkpoints', device=None)</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>hs, no <span class="op">=</span> <span class="dv">32</span>, <span class="dv">80</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"model"</span>: {</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"embedding_size"</span>: <span class="bu">len</span>(ds.vocab.vocab), <span class="st">"hidden_size"</span>: hs, <span class="st">"num_bins"</span>: no, </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"num_encoders"</span>: <span class="dv">2</span>, <span class="st">"num_decoders"</span>: <span class="dv">2</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"encoder"</span>: {</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"hidden_size"</span>: hs,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"multi_head_attention"</span>: {<span class="st">"hidden_size"</span>: hs, <span class="st">"num_attention_heads"</span>: <span class="dv">4</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"conv_net"</span>: {<span class="st">"hidden_size"</span>: hs, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                         <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"decoder"</span>: {</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"hidden_size"</span>: hs,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">"multi_head_attention"</span>: {<span class="st">"hidden_size"</span>: hs, <span class="st">"num_attention_heads"</span>: <span class="dv">4</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"conv_net"</span>: {<span class="st">"hidden_size"</span>: hs, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>                         <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"duration_predictor"</span>: {<span class="st">"hidden_size"</span>: hs, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"postnet"</span>: {<span class="st">"hidden_size"</span>: no, <span class="st">"kernal_size"</span>: <span class="dv">3</span>, <span class="st">"filter_size"</span>: <span class="dv">16</span>, <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>, </span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"num_layers"</span>: <span class="dv">5</span>},</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"optim"</span>: {<span class="st">"lr"</span>:  <span class="fl">1e-4</span>, <span class="st">"betas"</span>: (<span class="fl">0.9</span>, <span class="fl">0.98</span>), <span class="st">"eps"</span>: <span class="fl">1e-10</span>, <span class="st">"weight_decay"</span>: <span class="dv">0</span>},</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"scheduler"</span>: {<span class="st">"lr_mul"</span>: <span class="fl">1.</span>, <span class="st">"d_model"</span>: hs, <span class="st">"n_warmup_steps"</span>: <span class="dv">4000</span>},</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>learner <span class="op">=</span> FastspeechLearner(dl, ds.norm, FastSpeech, Adam, TransformerScheduler, </span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>                            config, mae_loss, F.mse_loss, mae_loss, dl_v<span class="op">=</span>dl, log_interval<span class="op">=</span><span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>learner.fit(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="06_training_files/figure-html/cell-7-output-1.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"1cb55ae8d30a4ee3849465c8862098b2","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="06_training_files/figure-html/cell-7-output-3.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="06_training_files/figure-html/cell-7-output-4.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>file_path <span class="op">=</span> <span class="st">"../checkpoints/save_2.pt"</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>learner.save_model(file_path)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>ls ..<span class="op">/</span>checkpoints<span class="op">/</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> save_0        save_153.pt   save_207.pt   save_262.pt   save_47.pt
+ save_0.pt     save_154.pt   save_208.pt   save_263.pt   save_48.pt
+ save_1        save_155.pt   save_209.pt   save_264.pt   save_49.pt
+ save_100.pt   save_156.pt   save_20.pt    save_265.pt   save_4.pt
+ save_101.pt   save_157.pt   save_210.pt   save_266.pt   save_50.pt
+ save_102.pt   save_158.pt   save_211.pt   save_267.pt   save_51.pt
+ save_103.pt   save_159.pt   save_212.pt   save_268.pt   save_52.pt
+ save_104.pt   save_15.pt    save_213.pt   save_269.pt   save_53.pt
+ save_105.pt   save_160.pt   save_214.pt   save_26.pt    save_54.pt
+ save_106.pt   save_161.pt   save_215.pt   save_270.pt   save_55.pt
+ save_107.pt   save_162.pt   save_216.pt   save_271.pt   save_56.pt
+ save_108.pt   save_163.pt   save_217.pt   save_272.pt   save_57.pt
+ save_109.pt   save_164.pt   save_218.pt   save_273.pt   save_58.pt
+ save_10.pt    save_165.pt   save_219.pt   save_274.pt   save_59.pt
+ save_110.pt   save_166.pt   save_21.pt    save_275.pt   save_5.pt
+ save_111.pt   save_167.pt   save_220.pt   save_276.pt   save_60.pt
+ save_112.pt   save_168.pt   save_221.pt   save_277.pt   save_61.pt
+ save_113.pt   save_169.pt   save_222.pt   save_278.pt   save_62.pt
+ save_114.pt   save_16.pt    save_223.pt   save_279.pt   save_63.pt
+ save_115.pt   save_170.pt   save_224.pt   save_27.pt    save_64.pt
+ save_116.pt   save_171.pt   save_225.pt   save_280.pt   save_65.pt
+ save_117.pt   save_172.pt   save_226.pt   save_281.pt   save_66.pt
+ save_118.pt   save_173.pt   save_227.pt   save_282.pt   save_67.pt
+ save_119.pt   save_174.pt   save_228.pt   save_283.pt   save_68.pt
+ save_11.pt    save_175.pt   save_229.pt   save_284.pt   save_69.pt
+ save_120.pt   save_176.pt   save_22.pt    save_285.pt   save_6.pt
+ save_121.pt   save_177.pt   save_230.pt   save_286.pt   save_70.pt
+ save_122.pt   save_178.pt   save_231.pt   save_287.pt   save_71.pt
+ save_123.pt   save_179.pt   save_232.pt   save_288.pt   save_72.pt
+ save_124.pt   save_17.pt    save_233.pt   save_289.pt   save_73.pt
+ save_125.pt   save_180.pt   save_234.pt   save_28.pt    save_74.pt
+ save_126.pt   save_181.pt   save_235.pt   save_290.pt   save_75.pt
+ save_127.pt   save_182.pt   save_236.pt   save_291.pt   save_76.pt
+ save_128.pt   save_183.pt   save_237.pt   save_292.pt   save_77.pt
+ save_129.pt   save_184.pt   save_238.pt   save_293.pt   save_78.pt
+ save_12.pt    save_185.pt   save_239.pt   save_294.pt   save_79.pt
+ save_130.pt   save_186.pt   save_23.pt    save_295.pt   save_7.pt
+ save_131.pt   save_187.pt   save_240.pt   save_296.pt   save_80.pt
+ save_132.pt   save_188.pt   save_241.pt   save_297.pt   save_81.pt
+ save_133.pt   save_189.pt   save_242.pt   save_298.pt   save_82.pt
+ save_134.pt   save_18.pt    save_243.pt   save_299.pt   save_83.pt
+ save_135.pt   save_190.pt   save_244.pt   save_29.pt   'save_84 (copy).pt'
+ save_136.pt   save_191.pt   save_245.pt   save_2.pt     save_84.pt
+ save_137.pt   save_192.pt   save_246.pt   save_30.pt    save_85.pt
+ save_138.pt   save_193.pt   save_247.pt   save_31.pt    save_86.pt
+ save_139.pt   save_194.pt   save_248.pt   save_32.pt    save_87.pt
+ save_13.pt    save_195.pt   save_249.pt   save_33.pt    save_88.pt
+ save_140.pt   save_196.pt   save_24.pt    save_34.pt    save_89.pt
+ save_141.pt   save_197.pt   save_250.pt   save_35.pt    save_8.pt
+ save_142.pt   save_198.pt   save_251.pt   save_36.pt    save_90.pt
+ save_143.pt   save_199.pt   save_252.pt   save_37.pt    save_91.pt
+ save_144.pt   save_19.pt    save_253.pt   save_38.pt    save_92.pt
+ save_145.pt   save_1.pt     save_254.pt   save_39.pt    save_93.pt
+ save_146.pt   save_2        save_255.pt   save_3.pt     save_94.pt
+ save_147.pt   save_200.pt   save_256.pt   save_40.pt    save_95.pt
+ save_148.pt   save_201.pt   save_257.pt   save_41.pt    save_96.pt
+ save_149.pt   save_202.pt   save_258.pt   save_42.pt    save_97.pt
+ save_14.pt    save_203.pt   save_259.pt   save_43.pt    save_98.pt
+ save_150.pt   save_204.pt   save_25.pt    save_44.pt    save_99.pt
+ save_151.pt   save_205.pt   save_260.pt   save_45.pt    save_9.pt
+ save_152.pt   save_206.pt   save_261.pt   save_46.pt</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/training.py#L184" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="count_parameters" class="level3">
+<h3 class="anchored" data-anchor-id="count_parameters">count_parameters</h3>
+<blockquote class="blockquote">
+<pre><code> count_parameters (model:torch.nn.modules.module.Module)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>count_parameters(learner.model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>38529</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/training.py#L188" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="load_checkpoint" class="level3">
+<h3 class="anchored" data-anchor-id="load_checkpoint">load_checkpoint</h3>
+<blockquote class="blockquote">
+<pre><code> load_checkpoint (file_path:str, device='cpu')</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>state_dict, config, norm <span class="op">=</span> load_checkpoint(file_path, <span class="st">'cpu'</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>learner <span class="op">=</span> FastspeechLearner(dl, norm, FastSpeech, Adam, TransformerScheduler,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>                            config, mae_loss, F.mse_loss, mae_loss, log_interval<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>learner.load_model_state_dict(state_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

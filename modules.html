@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.340">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="This package contains the modules that make up the FastSpeech architecture">
+
+<title>fastspeech - modules</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="fastspeech - modules">
+<meta property="og:description" content="This package contains the modules that make up the FastSpeech architecture">
+<meta property="og:image" content="https://ahadjawaid.github.io/fastspeech/../assets/multi-head-attention.png">
+<meta property="og:site-name" content="fastspeech">
+<meta property="og:image:height" content="622">
+<meta property="og:image:width" content="1170">
+<meta name="twitter:title" content="fastspeech - modules">
+<meta name="twitter:description" content="This package contains the modules that make up the FastSpeech architecture">
+<meta name="twitter:image" content="https://ahadjawaid.github.io/fastspeech/../assets/multi-head-attention.png">
+<meta name="twitter:image-height" content="622">
+<meta name="twitter:image-width" content="1170">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">fastspeech</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools ms-auto">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./modules.html">modules</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">fastspeech</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./modules.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">modules</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./loading.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">loading</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./visualize.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">visualize</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./preprocess.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">preprocess</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">data</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">training</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-inference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">inference</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./training_model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">training_model.html</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#phoneme-embedding" id="toc-phoneme-embedding" class="nav-link active" data-scroll-target="#phoneme-embedding">phoneme embedding</a></li>
+  <li><a href="#positional-embedding" id="toc-positional-embedding" class="nav-link" data-scroll-target="#positional-embedding">positional embedding</a>
+  <ul class="collapse">
+  <li><a href="#get_positional_embeddings" id="toc-get_positional_embeddings" class="nav-link" data-scroll-target="#get_positional_embeddings">get_positional_embeddings</a></li>
+  </ul></li>
+  <li><a href="#xavier-initialization" id="toc-xavier-initialization" class="nav-link" data-scroll-target="#xavier-initialization">xavier initialization</a>
+  <ul class="collapse">
+  <li><a href="#conv1d" id="toc-conv1d" class="nav-link" data-scroll-target="#conv1d">Conv1d</a></li>
+  <li><a href="#linear" id="toc-linear" class="nav-link" data-scroll-target="#linear">Linear</a></li>
+  </ul></li>
+  <li><a href="#feed-forward-transformer" id="toc-feed-forward-transformer" class="nav-link" data-scroll-target="#feed-forward-transformer">feed-forward transformer</a>
+  <ul class="collapse">
+  <li><a href="#scaled_dot_product_attention" id="toc-scaled_dot_product_attention" class="nav-link" data-scroll-target="#scaled_dot_product_attention">scaled_dot_product_attention</a></li>
+  <li><a href="#attentionhead" id="toc-attentionhead" class="nav-link" data-scroll-target="#attentionhead">AttentionHead</a></li>
+  <li><a href="#multiheadattention" id="toc-multiheadattention" class="nav-link" data-scroll-target="#multiheadattention">MultiHeadAttention</a></li>
+  <li><a href="#convnet" id="toc-convnet" class="nav-link" data-scroll-target="#convnet">ConvNet</a></li>
+  <li><a href="#feedforwardtransformer" id="toc-feedforwardtransformer" class="nav-link" data-scroll-target="#feedforwardtransformer">FeedForwardTransformer</a></li>
+  </ul></li>
+  <li><a href="#duration-predictor" id="toc-duration-predictor" class="nav-link" data-scroll-target="#duration-predictor">duration predictor</a>
+  <ul class="collapse">
+  <li><a href="#durationpredictor" id="toc-durationpredictor" class="nav-link" data-scroll-target="#durationpredictor">DurationPredictor</a></li>
+  </ul></li>
+  <li><a href="#length-regulator" id="toc-length-regulator" class="nav-link" data-scroll-target="#length-regulator">length regulator</a>
+  <ul class="collapse">
+  <li><a href="#length_regulator" id="toc-length_regulator" class="nav-link" data-scroll-target="#length_regulator">length_regulator</a></li>
+  </ul></li>
+  <li><a href="#postnet" id="toc-postnet" class="nav-link" data-scroll-target="#postnet">postnet</a>
+  <ul class="collapse">
+  <li><a href="#postnet-1" id="toc-postnet-1" class="nav-link" data-scroll-target="#postnet-1">PostNet</a></li>
+  </ul></li>
+  <li><a href="#fastspeech" id="toc-fastspeech" class="nav-link" data-scroll-target="#fastspeech">fastspeech</a>
+  <ul class="collapse">
+  <li><a href="#fastspeech-1" id="toc-fastspeech-1" class="nav-link" data-scroll-target="#fastspeech-1">FastSpeech</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/ahadjawaid/fastspeech/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">modules</h1>
+</div>
+
+<div>
+  <div class="description">
+    This package contains the modules that make up the <a href="https://arxiv.org/abs/1905.09263">FastSpeech</a> architecture
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<section id="phoneme-embedding" class="level2">
+<h2 class="anchored" data-anchor-id="phoneme-embedding">phoneme embedding</h2>
+<blockquote class="blockquote">
+<p>The first module of the fastspeech architecture is the input embeddings where they embed the input phonemes in to the models hidden dimension</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>embedding <span class="op">=</span> nn.Embedding(vocab_sz, n_hidden)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>samples_embedded <span class="op">=</span> embedding(sample_batch)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>samples_embedded.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([16, 18, 48])</code></pre>
+</div>
+</div>
+</section>
+<section id="positional-embedding" class="level2">
+<h2 class="anchored" data-anchor-id="positional-embedding">positional embedding</h2>
+<blockquote class="blockquote">
+<p>After the embedding layer in the fastspeech model it inputs positional embedding to allow the model to have information on the positons of inputs. The positional embedding used in the <a href="https://arxiv.org/abs/1905.09263">FastSpeech</a> paper is the function described in the <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a> paper.</p>
+</blockquote>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L15" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="get_positional_embeddings" class="level3">
+<h3 class="anchored" data-anchor-id="get_positional_embeddings">get_positional_embeddings</h3>
+<blockquote class="blockquote">
+<pre><code> get_positional_embeddings (seq_len, d_model, device:torch.device=None)</code></pre>
+</blockquote>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>seq_len</td>
+<td></td>
+<td></td>
+<td>The length of the sequence</td>
+</tr>
+<tr class="even">
+<td>d_model</td>
+<td></td>
+<td></td>
+<td>The hidden dimension of the model</td>
+</tr>
+<tr class="odd">
+<td>device</td>
+<td>device</td>
+<td>None</td>
+<td>Device you want to use</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>pos_emb <span class="op">=</span> get_positional_embeddings(seq_len, n_hidden)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>pos_emb.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([18, 48])</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>inp <span class="op">=</span> samples_embedded <span class="op">+</span> pos_emb</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>inp.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([16, 18, 48])</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="xavier-initialization" class="level2">
+<h2 class="anchored" data-anchor-id="xavier-initialization">xavier initialization</h2>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L26" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="conv1d" class="level3">
+<h3 class="anchored" data-anchor-id="conv1d">Conv1d</h3>
+<blockquote class="blockquote">
+<pre><code> Conv1d (*args, gain='linear', **kwargs)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>Conv1d(seq_len, <span class="dv">10</span>, <span class="dv">1</span>)(inp).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([16, 10, 48])</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L34" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="linear" class="level3">
+<h3 class="anchored" data-anchor-id="linear">Linear</h3>
+<blockquote class="blockquote">
+<pre><code> Linear (*args, gain='linear', **kwargs)</code></pre>
+</blockquote>
+</section>
+</section>
+<section id="feed-forward-transformer" class="level2">
+<h2 class="anchored" data-anchor-id="feed-forward-transformer">feed-forward transformer</h2>
+<blockquote class="blockquote">
+<p>This component of the model is the engine of the model. It is what will be used to make up the phoneme encoder and mel spectrogram decoder. It consists of a Multi-Head Attention block and a Conv Network. An additional note from the paper is that prior to the addition of residual inputs and the normalization. <img src="../assets/multi-head-attention.png" class="img-fluid" alt="Scaled Dot Product Attention and Multi-Head Attention"></p>
+</blockquote>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L42" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="scaled_dot_product_attention" class="level3">
+<h3 class="anchored" data-anchor-id="scaled_dot_product_attention">scaled_dot_product_attention</h3>
+<blockquote class="blockquote">
+<pre><code> scaled_dot_product_attention (query, key, value)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>t1 <span class="op">=</span> torch.randn((<span class="dv">1</span>,<span class="dv">24</span>,<span class="dv">32</span>))</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>scaled_dot_product_attention(t1,t1,t1).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([1, 24, 32])</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L49" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="attentionhead" class="level3">
+<h3 class="anchored" data-anchor-id="attentionhead">AttentionHead</h3>
+<blockquote class="blockquote">
+<pre><code> AttentionHead (embed_dim, head_dim)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>AttentionHead(<span class="dv">32</span>, <span class="dv">16</span>)(t1).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([1, 24, 16])</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L62" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="multiheadattention" class="level3">
+<h3 class="anchored" data-anchor-id="multiheadattention">MultiHeadAttention</h3>
+<blockquote class="blockquote">
+<pre><code> MultiHeadAttention (config)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"num_attention_heads"</span>: <span class="dv">4</span>, <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>MultiHeadAttention(config)(t1).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([1, 24, 32])</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L81" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="convnet" class="level3">
+<h3 class="anchored" data-anchor-id="convnet">ConvNet</h3>
+<blockquote class="blockquote">
+<pre><code> ConvNet (config)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>ConvNet(config)(t1).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([1, 24, 32])</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L103" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="feedforwardtransformer" class="level3">
+<h3 class="anchored" data-anchor-id="feedforwardtransformer">FeedForwardTransformer</h3>
+<blockquote class="blockquote">
+<pre><code> FeedForwardTransformer (config)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"hidden_size"</span>: <span class="dv">32</span>,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"multi_head_attention"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"num_attention_heads"</span>: <span class="dv">4</span>, </span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"conv_net"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>FeedForwardTransformer(config)(t1).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([1, 24, 32])</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="duration-predictor" class="level2">
+<h2 class="anchored" data-anchor-id="duration-predictor">duration predictor</h2>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L119" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="durationpredictor" class="level3">
+<h3 class="anchored" data-anchor-id="durationpredictor">DurationPredictor</h3>
+<blockquote class="blockquote">
+<pre><code> DurationPredictor (config)</code></pre>
+</blockquote>
+<p>This module predicts the logarithmic duration length for each phoneme based on the phoneme hidden features. It consists of 2-layer 1D convolutional network with ReLU activation, each followed by the layer normalization and the dropout layer, and an extra linear layer to output a scalar.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>, </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>log_durations <span class="op">=</span> DurationPredictor(config)(torch.randn((<span class="dv">3</span>,<span class="dv">18</span>,<span class="dv">32</span>)))</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>log_durations.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([3, 18])</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="length-regulator" class="level2">
+<h2 class="anchored" data-anchor-id="length-regulator">length regulator</h2>
+<blockquote class="blockquote">
+<p>This module upsamples the phoneme hidden feature to the size of the melspectrogram based on the phoneme durations provided</p>
+</blockquote>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L148" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="length_regulator" class="level3">
+<h3 class="anchored" data-anchor-id="length_regulator">length_regulator</h3>
+<blockquote class="blockquote">
+<pre><code> length_regulator (hi:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;,
+                   durations:&lt;built-
+                   inmethodtensoroftypeobjectat0x7f092627c540&gt;,
+                   upsample_ratio:float, device:torch.device=None)</code></pre>
+</blockquote>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>hi</td>
+<td>tensor</td>
+<td></td>
+<td>The hidden phoneme features</td>
+</tr>
+<tr class="even">
+<td>durations</td>
+<td>tensor</td>
+<td></td>
+<td>The phoneme durations to upsample to</td>
+</tr>
+<tr class="odd">
+<td>upsample_ratio</td>
+<td>float</td>
+<td></td>
+<td>The multiplier ratio of upsampling rate</td>
+</tr>
+<tr class="even">
+<td>device</td>
+<td>device</td>
+<td>None</td>
+<td>Device you want to use</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="postnet" class="level2">
+<h2 class="anchored" data-anchor-id="postnet">postnet</h2>
+<blockquote class="blockquote">
+<p>To help convergence we use a postenet as described in <a href="https://arxiv.org/abs/1712.05884">tacotron 2</a></p>
+</blockquote>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L163" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="postnet-1" class="level3">
+<h3 class="anchored" data-anchor-id="postnet-1">PostNet</h3>
+<blockquote class="blockquote">
+<pre><code> PostNet (config)</code></pre>
+</blockquote>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+class Model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))</code></pre>
+<p>Submodules assigned in this way will be registered, and will have their parameters converted too when you call :meth:<code>to</code>, etc.</p>
+<p>.. note:: As per the example above, an <code>__init__()</code> call to the parent class must be made before assignment on the child.</p>
+<p>:ivar training: Boolean represents whether this module is in training or evaluation mode. :vartype training: bool</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_size"</span>: <span class="dv">3</span>, <span class="st">"filter_size"</span>: <span class="dv">16</span>, <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>, <span class="st">"num_layers"</span>: <span class="dv">5</span>}</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>PostNet(config)(t1.transpose(<span class="dv">1</span>,<span class="dv">2</span>)).shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([1, 32, 24])</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="fastspeech" class="level2">
+<h2 class="anchored" data-anchor-id="fastspeech">fastspeech</h2>
+<blockquote class="blockquote">
+<p>This is module will contain the full architecture for FastSpeech. it will consists of the feed-forward Transformer block, the length regulator, and the duration predictor.</p>
+</blockquote>
+<hr>
+<p><a href="https://github.com/ahadjawaid/fastspeech/blob/main/fastspeech/modules.py#L190" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fastspeech-1" class="level3">
+<h3 class="anchored" data-anchor-id="fastspeech-1">FastSpeech</h3>
+<blockquote class="blockquote">
+<pre><code> FastSpeech (config, device=None)</code></pre>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> {</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"embedding_size"</span>: <span class="dv">85</span>, <span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"num_bins"</span>: <span class="dv">80</span>, <span class="st">"num_encoders"</span>: <span class="dv">2</span>, <span class="st">"num_decoders"</span>: <span class="dv">2</span>,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"encoder"</span>: {</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"hidden_size"</span>: <span class="dv">32</span>,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"multi_head_attention"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"num_attention_heads"</span>: <span class="dv">4</span>, </span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"conv_net"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"decoder"</span>: {</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"hidden_size"</span>: <span class="dv">32</span>,</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"multi_head_attention"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"num_attention_heads"</span>: <span class="dv">4</span>,</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"conv_net"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>,</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>}</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"duration_predictor"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">32</span>, <span class="st">"kernal_sizes"</span>: [<span class="dv">3</span>,<span class="dv">3</span>], <span class="st">"filter_size"</span>: <span class="dv">16</span>, <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>},</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"postnet"</span>: {<span class="st">"hidden_size"</span>: <span class="dv">80</span>, <span class="st">"kernal_size"</span>: <span class="dv">3</span>, <span class="st">"filter_size"</span>: <span class="dv">16</span>, <span class="st">"hidden_dropout_prob"</span>: <span class="fl">0.1</span>, <span class="st">"num_layers"</span>: <span class="dv">5</span>},</span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>device <span class="op">=</span> torch.device(<span class="st">"cuda"</span> <span class="cf">if</span> torch.cuda.is_available() <span class="cf">else</span> <span class="st">"cpu"</span>)</span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> FastSpeech(config, device<span class="op">=</span>device).to(device)</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad(): mel, _ <span class="op">=</span> model(sample_batch.to(device), durations.to(device))</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>mel.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>torch.Size([16, 80, 180])</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>show_mel(mel[<span class="dv">0</span>].cpu())<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="01_modules_files/figure-html/cell-26-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

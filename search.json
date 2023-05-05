@@ -1,0 +1,212 @@
+[
+  {
+    "objectID": "07-inference.html",
+    "href": "07-inference.html",
+    "title": "inference",
+    "section": "",
+    "text": "source\n\nload_model_inference\n\n load_model_inference (checkpoint_path, training=False)\n\n\nmodel, norm = load_model_inference(checkpoint_path)\n\n\nsource\n\n\nfilter_non_alpha_chars\n\n filter_non_alpha_chars (input_str)\n\n\nfilter_non_alpha_chars(text)\n\n'This is a demonstration of my implementation of the text to speech model based on the fast speechs research paper using the griffinlim algorithm as the vocoder'\n\n\n\nsource\n\n\npreprocess_text\n\n preprocess_text (text, vocab_path)\n\n\nvec = preprocess_text(text, vocab_path)\nvec.shape\n\ntorch.Size([1, 116])\n\n\n\nsource\n\n\ninference\n\n inference (vec, model, upsample_ratio=1.0)\n\n\nmel = norm.denormalize(inference(vec, model))\nshow_mel(mel)\n\n\n\n\n\nsource\n\n\nbayesian_inference\n\n bayesian_inference (vec, model, samples=10, upsample_ratio=1.0)\n\nDoes ensemabling based on averaging between different prediction with dropout left on to add varience between each predicition\n\nmel_b = norm.denormalize(bayesian_inference(vec, model, 10))\nshow_mel(mel)\n\n\n\n\n\nfrom IPython.display import display\n\n\ndisplay(Audio(wav, rate=22050))\ndisplay(Audio(wav_b, rate=22050))\n\n\n                \n                    \n                    Your browser does not support the audio element.\n                \n              \n\n\n\n                \n                    \n                    Your browser does not support the audio element."
+  },
+  {
+    "objectID": "data.html",
+    "href": "data.html",
+    "title": "data",
+    "section": "",
+    "text": "source\n\nTTSDataset\n\n TTSDataset (path_data:str, path_vocab:str, Norm, sr:int=22050,\n             n_fft:int=1024, hl:int=256, nb:int=80, ds:slice=slice(None,\n             None, None), stats:dict={}, preload:bool=False)\n\nAn abstract class representing a :class:Dataset.\nAll datasets that represent a map from keys to data samples should subclass it. All subclasses should overwrite :meth:__getitem__, supporting fetching a data sample for a given key. Subclasses could also optionally overwrite :meth:__len__, which is expected to return the size of the dataset by many :class:~torch.utils.data.Sampler implementations and the default options of :class:~torch.utils.data.DataLoader.\n.. note:: :class:~torch.utils.data.DataLoader by default constructs a index sampler that yields integral indices. To make it work with a map-style dataset with non-integral indices/keys, a custom sampler must be provided.\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\npath_data\nstr\n\n\n\n\npath_vocab\nstr\n\n\n\n\nNorm\n\n\nA Normalization class\n\n\nsr\nint\n22050\nSampling rate\n\n\nn_fft\nint\n1024\nLength of the windowed signal\n\n\nhl\nint\n256\nThe hop length\n\n\nnb\nint\n80\nNumber of mel bins\n\n\nds\nslice\nslice(None, None, None)\nThe data slice\n\n\nstats\ndict\n{}\nStatistics dictionary for preprocessing\n\n\npreload\nbool\nFalse\nLoads dataset on initilzation\n\n\n\n\nds = TTSDataset(path, path_vocab, ZScoreNormalization, preload=True,\n                stats={'max_val': 100., 'min_val': .01, \"mean\": 0.01, \n                       \"std\": 0.20, \"top_db\": 35})\n\nphones, duration, mel = ds[0]\nshow_mel(ds.norm.denormalize(mel))\nphones.shape, duration.shape, mel.shape\n\n\n\n\n(torch.Size([108]), torch.Size([108]), torch.Size([80, 824]))\n\n\n\nsource\n\n\ncompute_statistics\n\n compute_statistics (data:list[torch._VariableFunctionsClass.tensor])\n\n\nstats = compute_statistics(ds.mels)\nstats\n\n{'min_val': -0.04999999,\n 'max_val': 2457.7344,\n 'mean': 2.4844525,\n 'std': 26.82147}\n\n\n\nsource\n\n\ncollate_fn\n\n collate_fn (inp, pad_num:int, norm)\n\n\ndl = DataLoader(ds, 2, collate_fn=partial(collate_fn, pad_num=ds.vocab.pad_num, \n                                          norm=ds.norm))\n\nfor phones, durations, mels in dl: break\nphones.shape, durations.shape, mels.shape\n\n(torch.Size([2, 109]), torch.Size([2, 109]), torch.Size([2, 80, 824]))"
+  },
+  {
+    "objectID": "modules.html",
+    "href": "modules.html",
+    "title": "modules",
+    "section": "",
+    "text": "The first module of the fastspeech architecture is the input embeddings where they embed the input phonemes in to the models hidden dimension\n\n\nembedding = nn.Embedding(vocab_sz, n_hidden)\nsamples_embedded = embedding(sample_batch)\nsamples_embedded.shape\n\ntorch.Size([16, 18, 48])"
+  },
+  {
+    "objectID": "modules.html#phoneme-embedding",
+    "href": "modules.html#phoneme-embedding",
+    "title": "modules",
+    "section": "",
+    "text": "The first module of the fastspeech architecture is the input embeddings where they embed the input phonemes in to the models hidden dimension\n\n\nembedding = nn.Embedding(vocab_sz, n_hidden)\nsamples_embedded = embedding(sample_batch)\nsamples_embedded.shape\n\ntorch.Size([16, 18, 48])"
+  },
+  {
+    "objectID": "modules.html#positional-embedding",
+    "href": "modules.html#positional-embedding",
+    "title": "modules",
+    "section": "positional embedding",
+    "text": "positional embedding\n\nAfter the embedding layer in the fastspeech model it inputs positional embedding to allow the model to have information on the positons of inputs. The positional embedding used in the FastSpeech paper is the function described in the Attention Is All You Need paper.\n\n\nsource\n\nget_positional_embeddings\n\n get_positional_embeddings (seq_len, d_model, device:torch.device=None)\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nseq_len\n\n\nThe length of the sequence\n\n\nd_model\n\n\nThe hidden dimension of the model\n\n\ndevice\ndevice\nNone\nDevice you want to use\n\n\n\n\npos_emb = get_positional_embeddings(seq_len, n_hidden)\npos_emb.shape\n\ntorch.Size([18, 48])\n\n\n\ninp = samples_embedded + pos_emb\ninp.shape\n\ntorch.Size([16, 18, 48])"
+  },
+  {
+    "objectID": "modules.html#xavier-initialization",
+    "href": "modules.html#xavier-initialization",
+    "title": "modules",
+    "section": "xavier initialization",
+    "text": "xavier initialization\n\nsource\n\nConv1d\n\n Conv1d (*args, gain='linear', **kwargs)\n\n\nConv1d(seq_len, 10, 1)(inp).shape\n\ntorch.Size([16, 10, 48])\n\n\n\nsource\n\n\nLinear\n\n Linear (*args, gain='linear', **kwargs)"
+  },
+  {
+    "objectID": "modules.html#feed-forward-transformer",
+    "href": "modules.html#feed-forward-transformer",
+    "title": "modules",
+    "section": "feed-forward transformer",
+    "text": "feed-forward transformer\n\nThis component of the model is the engine of the model. It is what will be used to make up the phoneme encoder and mel spectrogram decoder. It consists of a Multi-Head Attention block and a Conv Network. An additional note from the paper is that prior to the addition of residual inputs and the normalization. \n\n\nsource\n\nscaled_dot_product_attention\n\n scaled_dot_product_attention (query, key, value)\n\n\nt1 = torch.randn((1,24,32))\nscaled_dot_product_attention(t1,t1,t1).shape\n\ntorch.Size([1, 24, 32])\n\n\n\nsource\n\n\nAttentionHead\n\n AttentionHead (embed_dim, head_dim)\n\n\nAttentionHead(32, 16)(t1).shape\n\ntorch.Size([1, 24, 16])\n\n\n\nsource\n\n\nMultiHeadAttention\n\n MultiHeadAttention (config)\n\n\nconfig = {\"hidden_size\": 32, \"num_attention_heads\": 4, \"hidden_dropout_prob\": 0.1}\nMultiHeadAttention(config)(t1).shape\n\ntorch.Size([1, 24, 32])\n\n\n\nsource\n\n\nConvNet\n\n ConvNet (config)\n\n\nconfig = {\"hidden_size\": 32, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n          \"hidden_dropout_prob\": 0.1}\nConvNet(config)(t1).shape\n\ntorch.Size([1, 24, 32])\n\n\n\nsource\n\n\nFeedForwardTransformer\n\n FeedForwardTransformer (config)\n\n\nconfig = {\n    \"hidden_size\": 32,\n    \"multi_head_attention\": {\"hidden_size\": 32, \"num_attention_heads\": 4, \n                             \"hidden_dropout_prob\": 0.1},\n    \"conv_net\": {\"hidden_size\": 32, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n                 \"hidden_dropout_prob\": 0.1}\n}\nFeedForwardTransformer(config)(t1).shape\n\ntorch.Size([1, 24, 32])"
+  },
+  {
+    "objectID": "modules.html#duration-predictor",
+    "href": "modules.html#duration-predictor",
+    "title": "modules",
+    "section": "duration predictor",
+    "text": "duration predictor\n\nsource\n\nDurationPredictor\n\n DurationPredictor (config)\n\nThis module predicts the logarithmic duration length for each phoneme based on the phoneme hidden features. It consists of 2-layer 1D convolutional network with ReLU activation, each followed by the layer normalization and the dropout layer, and an extra linear layer to output a scalar.\n\nconfig = {\"hidden_size\": 32, \"kernal_sizes\": [3,3], \"filter_size\": 16, \n          \"hidden_dropout_prob\": 0.1}\nlog_durations = DurationPredictor(config)(torch.randn((3,18,32)))\nlog_durations.shape\n\ntorch.Size([3, 18])"
+  },
+  {
+    "objectID": "modules.html#length-regulator",
+    "href": "modules.html#length-regulator",
+    "title": "modules",
+    "section": "length regulator",
+    "text": "length regulator\n\nThis module upsamples the phoneme hidden feature to the size of the melspectrogram based on the phoneme durations provided\n\n\nsource\n\nlength_regulator\n\n length_regulator (hi:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;,\n                   durations:&lt;built-\n                   inmethodtensoroftypeobjectat0x7f092627c540&gt;,\n                   upsample_ratio:float, device:torch.device=None)\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nhi\ntensor\n\nThe hidden phoneme features\n\n\ndurations\ntensor\n\nThe phoneme durations to upsample to\n\n\nupsample_ratio\nfloat\n\nThe multiplier ratio of upsampling rate\n\n\ndevice\ndevice\nNone\nDevice you want to use"
+  },
+  {
+    "objectID": "modules.html#postnet",
+    "href": "modules.html#postnet",
+    "title": "modules",
+    "section": "postnet",
+    "text": "postnet\n\nTo help convergence we use a postenet as described in tacotron 2\n\n\nsource\n\nPostNet\n\n PostNet (config)\n\nBase class for all neural network modules.\nYour models should also subclass this class.\nModules can also contain other Modules, allowing to nest them in a tree structure. You can assign the submodules as regular attributes::\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv1 = nn.Conv2d(1, 20, 5)\n        self.conv2 = nn.Conv2d(20, 20, 5)\n\n    def forward(self, x):\n        x = F.relu(self.conv1(x))\n        return F.relu(self.conv2(x))\nSubmodules assigned in this way will be registered, and will have their parameters converted too when you call :meth:to, etc.\n.. note:: As per the example above, an __init__() call to the parent class must be made before assignment on the child.\n:ivar training: Boolean represents whether this module is in training or evaluation mode. :vartype training: bool\n\nconfig = {\"hidden_size\": 32, \"kernal_size\": 3, \"filter_size\": 16, \"hidden_dropout_prob\": 0.1, \"num_layers\": 5}\nPostNet(config)(t1.transpose(1,2)).shape\n\ntorch.Size([1, 32, 24])"
+  },
+  {
+    "objectID": "modules.html#fastspeech",
+    "href": "modules.html#fastspeech",
+    "title": "modules",
+    "section": "fastspeech",
+    "text": "fastspeech\n\nThis is module will contain the full architecture for FastSpeech. it will consists of the feed-forward Transformer block, the length regulator, and the duration predictor.\n\n\nsource\n\nFastSpeech\n\n FastSpeech (config, device=None)\n\n\nconfig = {\n    \"embedding_size\": 85, \"hidden_size\": 32, \"num_bins\": 80, \"num_encoders\": 2, \"num_decoders\": 2,\n    \"encoder\": {\n        \"hidden_size\": 32,\n        \"multi_head_attention\": {\"hidden_size\": 32, \"num_attention_heads\": 4, \n                                 \"hidden_dropout_prob\": 0.1},\n        \"conv_net\": {\"hidden_size\": 32, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n                     \"hidden_dropout_prob\": 0.1}\n    },\n    \"decoder\": {\n        \"hidden_size\": 32,\n        \"multi_head_attention\": {\"hidden_size\": 32, \"num_attention_heads\": 4,\n                                \"hidden_dropout_prob\": 0.1},\n        \"conv_net\": {\"hidden_size\": 32, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n                     \"hidden_dropout_prob\": 0.1}\n    },\n    \"duration_predictor\": {\"hidden_size\": 32, \"kernal_sizes\": [3,3], \"filter_size\": 16, \"hidden_dropout_prob\": 0.1},\n    \"postnet\": {\"hidden_size\": 80, \"kernal_size\": 3, \"filter_size\": 16, \"hidden_dropout_prob\": 0.1, \"num_layers\": 5},\n}\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\nmodel = FastSpeech(config, device=device).to(device)\nwith torch.no_grad(): mel, _ = model(sample_batch.to(device), durations.to(device))\nmel.shape\n\ntorch.Size([16, 80, 180])\n\n\n\nshow_mel(mel[0].cpu());"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "fastspeech",
+    "section": "",
+    "text": "pip install -e '.[dev]'"
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "fastspeech",
+    "section": "",
+    "text": "pip install -e '.[dev]'"
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "fastspeech",
+    "section": "How to use",
+    "text": "How to use\nFurther documentation of the modules and how to use the library can be found at: https://ahadjawaid.github.io/fastspeech/\nThe first step to use the model for inference is to import the model from a trained checkpoint\n\nmodel, norm = load_model_inference(checkpoint_path)\n\nNext we need to process the text to convert it into something the model can recognize\n\ntext = \"Hi, my name is ahod and this is a demonstration of my implementation of the fast speech model\"\nphones = preprocess_text(text, vocab_path)\n\nThen we generate the melspectrogram using the FastSpeech model\n\nmel = bayesian_inference(phones, model, 10)\nmel = norm.denormalize(mel)\nshow_mel(mel)\n\n\n\n\nLastly we use a vocoder to convert the melspectrogram to a wav file. In this case we are using the Griffin-Lim Algorithm to perform the inverse operation\n\nsf.write(save_path, wav, sr)\n\n\nYour browser does not support the audio element."
+  },
+  {
+    "objectID": "visualize.html",
+    "href": "visualize.html",
+    "title": "visualize",
+    "section": "",
+    "text": "source\n\n\n\n plot_wav (wav:&lt;built-infunctionarray&gt;)\n\n\n\n\n\nType\nDetails\n\n\n\n\nwav\narray\nThe tensor of sampled waveform\n\n\n\n\nplot_wav(wav)\n\n\n\n\n\nsource\n\n\n\n\n show_mel (mel:&lt;built-infunctionarray&gt;, title:str='', ax=None, show=True)\n\n\nshow_mel(mel, title=\"melspectrogram\")\n\n\n\n\n\nsource\n\n\n\n\n show_mels (mels:list[numpy.array])\n\n\n\n\n\nType\nDetails\n\n\n\n\nmels\nlist\nList of melspectrograms\n\n\n\n\nshow_mels(mels)\n\n\n\n\n\nsource\n\n\n\n\n MelAnimation (mels)\n\nInitialize self. See help(type(self)) for accurate signature."
+  },
+  {
+    "objectID": "visualize.html#audio",
+    "href": "visualize.html#audio",
+    "title": "visualize",
+    "section": "",
+    "text": "source\n\n\n\n plot_wav (wav:&lt;built-infunctionarray&gt;)\n\n\n\n\n\nType\nDetails\n\n\n\n\nwav\narray\nThe tensor of sampled waveform\n\n\n\n\nplot_wav(wav)\n\n\n\n\n\nsource\n\n\n\n\n show_mel (mel:&lt;built-infunctionarray&gt;, title:str='', ax=None, show=True)\n\n\nshow_mel(mel, title=\"melspectrogram\")\n\n\n\n\n\nsource\n\n\n\n\n show_mels (mels:list[numpy.array])\n\n\n\n\n\nType\nDetails\n\n\n\n\nmels\nlist\nList of melspectrograms\n\n\n\n\nshow_mels(mels)\n\n\n\n\n\nsource\n\n\n\n\n MelAnimation (mels)\n\nInitialize self. See help(type(self)) for accurate signature."
+  },
+  {
+    "objectID": "visualize.html#phones-and-durations",
+    "href": "visualize.html#phones-and-durations",
+    "title": "visualize",
+    "section": "phones and durations",
+    "text": "phones and durations\n\nsource\n\nplot_phoneme_durations\n\n plot_phoneme_durations (phonemes:list[str], durations:list[float],\n                         ax:matplotlib.axes._axes.Axes=None)\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nphonemes\nlist\n\nA list of phoneme strings\n\n\ndurations\nlist\n\nA list of durations that align with phonemes\n\n\nax\nAxes\nNone\nA matplotlib Axes to overlay over\n\n\n\n\nphonemes = ['a', 'b', 'c', 'd', 'e']\ndurations = [1.0, 1.5, 0.7, 2.0, 1.2]\nplot_phoneme_durations(phonemes, durations)"
+  },
+  {
+    "objectID": "visualize.html#training",
+    "href": "visualize.html#training",
+    "title": "visualize",
+    "section": "training",
+    "text": "training\n\nsource\n\nplot_loss\n\n plot_loss (loss:list, title:str='training')\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nloss\nlist\n\nThe list containing loss measurements\n\n\ntitle\nstr\ntraining\nWhich set of loss you are plotting\n\n\n\n\nloss = [0.3, 0.2, 0.5, 0.6, 0.1, 0.01, 0.0015]\nplot_loss(loss)"
+  },
+  {
+    "objectID": "training_model.html",
+    "href": "training_model.html",
+    "title": "fastspeech",
+    "section": "",
+    "text": "from fastspeech.modules import *\nfrom fastspeech.data import *\nfrom fastspeech.training import *\nfrom fastspeech.visualize import *\nfrom fastspeech.preprocess import ZScoreNormalization, MinMaxNormalization, NoNorm\nfrom torch.utils.data import DataLoader\nfrom torch.optim import Adam\nfrom torch.optim.lr_scheduler import OneCycleLR\nimport torch.nn.functional as F\nfrom functools import partial\nfrom pathlib import Path\nimport json\nimport torch\n\n\n\npath = Path(\"../../data/LJSpeech-1.1/wavs/\")\npath_vocab = Path(\"../../data/CMUDict/cmudict-0.7b.symbols.txt\")\npath_stats = Path(\"../sample_data/lj_mel_stats.json\")\n\n\nwith open(path_stats, 'r') as f: stats = json.load(f)\n\n\nstats = {key: float(stats[key]) for key in stats}\nstats[\"top_db\"] = 35\nstats\n\n{'min_val': -0.000100009995,\n 'max_val': 12.625555,\n 'mean': 0.0021890362,\n 'std': 0.02285596,\n 'top_db': 35}\n\n\n\ncut = int(13084*.9)\nds = TTSDataset(path, path_vocab, ZScoreNormalization, ds=slice(0, cut), \n                preload=True, stats=stats)\nds_v = TTSDataset(path, path_vocab, ZScoreNormalization, ds=slice(cut, None), \n                preload=True, stats=stats)\n\n\nnormalized = ds.mels[0]\ndenormalized = ds.norm.denormalize(normalized)\nshow_mels([normalized, denormalized])\n\n\n\n\n\nbs = 48\nn_workers = 2\npres_worker = True\n\ncollate_fn_p = partial(collate_fn, pad_num=ds.vocab.pad_num, norm=ds.norm)\ndl = DataLoader(ds, bs, shuffle=True, num_workers=n_workers, pin_memory=True,\n                collate_fn=collate_fn_p, persistent_workers=pres_worker)\ndl_v = DataLoader(ds_v, bs, shuffle=True, num_workers=n_workers, pin_memory=True,\n                collate_fn=collate_fn_p, persistent_workers=pres_worker)\n\n\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\ndevice\n\ndevice(type='cuda')\n\n\n\nhs, no = 256, 80\nlog_interval = 500\nclip = 5.\nsteps = 500000\n\nconfig = {\n    \"model\": {\n        \"embedding_size\": len(ds.vocab.vocab), \"hidden_size\": hs, \"num_bins\": no, \n        \"num_encoders\": 4, \"num_decoders\": 4,\n        \"encoder\": {\n            \"hidden_size\": hs,\n            \"multi_head_attention\": {\"hidden_size\": hs, \"num_attention_heads\": 2,\n                                     \"hidden_dropout_prob\": 0.1},\n            \"conv_net\": {\"hidden_size\": hs, \"kernal_sizes\": [9,1], \"filter_size\": 1024,\n                         \"hidden_dropout_prob\": 0.1}\n        },\n        \"decoder\": {\n            \"hidden_size\": hs,\n            \"multi_head_attention\": {\"hidden_size\": hs, \"num_attention_heads\": 2,\n                                     \"hidden_dropout_prob\": 0.1},\n            \"conv_net\": {\"hidden_size\": hs, \"kernal_sizes\": [9,1], \"filter_size\": 1024,\n                         \"hidden_dropout_prob\": 0.1}\n        },\n        \"duration_predictor\": {\"hidden_size\": hs, \"kernal_sizes\": [3,3], \"filter_size\": hs,\n                               \"hidden_dropout_prob\": 0.5},\n#         \"postnet\": {\"hidden_size\": no, \"kernal_size\": 5, \"filter_size\": 512, \n#                     \"hidden_dropout_prob\": 0.5, \"num_layers\": 5},\n    },\n    \"optim\": {\"lr\":  1e-4, \"betas\": (0.9, 0.98), \"eps\": 1e-10, \"weight_decay\": 0.},\n    \"scheduler\": {\"lr_mul\": 1., \"d_model\": hs, \"n_warmup_steps\": 4000},\n#     \"scheduler\": {\"max_lr\": 1e-4, \"total_steps\": steps},\n}\nlearner = FastspeechLearner(dl, ds.norm, FastSpeech, Adam, TransformerScheduler, \n                            config, mae_loss, F.mse_loss, mae_loss, fp_16=False, \n                            dl_v=dl_v, grad_clip=clip, device=device, \n                            log_interval=log_interval)\n\n\ncount_parameters(learner.model)\n\n23532881\n\n\n\nfile_path = \"../checkpoints/save_590.pt\"\ncheckpoint_steps = 42500 + 65000 + 295500\nstate_dict, config, norm = load_checkpoint(file_path, device.type)\nlearner.load_model_state_dict(state_dict)\nlearner.scheduler.n_steps = checkpoint_steps\nsteps = steps - checkpoint_steps\n\n\nlearner.fit(steps)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nKeyboardInterrupt: \n\n\n\nplot_loss(learner.loss_history['a'])\n\n\n\n\n\nplot_loss(learner.loss_valid_history['a'], 'validation')\n\n\n\n\n\nmels = list(map(lambda x: x[0], learner.mel_history))"
+  },
+  {
+    "objectID": "training.html",
+    "href": "training.html",
+    "title": "training",
+    "section": "",
+    "text": "source\n\nmae_loss\n\n mae_loss (pred:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;,\n           target:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;)\n\n\nmae_loss(tensor([1.,2,3]), tensor([2.,6.5,4]))\n\ntensor(2.1667)\n\n\n\nsource\n\n\nTransformerScheduler\n\n TransformerScheduler (optimizer, lr_mul:float, d_model:int,\n                       n_warmup_steps:int)\n\nInitialize self. See help(type(self)) for accurate signature.\n\nsource\n\n\nFastspeechLearner\n\n FastspeechLearner (dl:torch.utils.data.dataloader.DataLoader, norm,\n                    Model, Optimizer, Scheduler, config:dict, loss_fn_a,\n                    loss_fn_b, loss_fn_c,\n                    dl_v:torch.utils.data.dataloader.DataLoader=None,\n                    accum_grad:int=1, grad_clip:float=1.0,\n                    fp_16:bool=False, log_interval:int=10,\n                    checkpoint_dir='../checkpoints', device=None)\n\nInitialize self. See help(type(self)) for accurate signature.\n\nhs, no = 32, 80\nconfig = {\n    \"model\": {\n        \"embedding_size\": len(ds.vocab.vocab), \"hidden_size\": hs, \"num_bins\": no, \n        \"num_encoders\": 2, \"num_decoders\": 2,\n        \"encoder\": {\n            \"hidden_size\": hs,\n            \"multi_head_attention\": {\"hidden_size\": hs, \"num_attention_heads\": 4,\n                                     \"hidden_dropout_prob\": 0.1},\n            \"conv_net\": {\"hidden_size\": hs, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n                         \"hidden_dropout_prob\": 0.1}\n        },\n        \"decoder\": {\n            \"hidden_size\": hs,\n            \"multi_head_attention\": {\"hidden_size\": hs, \"num_attention_heads\": 4,\n                                     \"hidden_dropout_prob\": 0.1},\n            \"conv_net\": {\"hidden_size\": hs, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n                         \"hidden_dropout_prob\": 0.1}\n        },\n        \"duration_predictor\": {\"hidden_size\": hs, \"kernal_sizes\": [3,3], \"filter_size\": 16,\n                               \"hidden_dropout_prob\": 0.1},\n        \"postnet\": {\"hidden_size\": no, \"kernal_size\": 3, \"filter_size\": 16, \"hidden_dropout_prob\": 0.1, \n                    \"num_layers\": 5},\n    },\n    \"optim\": {\"lr\":  1e-4, \"betas\": (0.9, 0.98), \"eps\": 1e-10, \"weight_decay\": 0},\n    \"scheduler\": {\"lr_mul\": 1., \"d_model\": hs, \"n_warmup_steps\": 4000},\n}\n\nlearner = FastspeechLearner(dl, ds.norm, FastSpeech, Adam, TransformerScheduler, \n                            config, mae_loss, F.mse_loss, mae_loss, dl_v=dl, log_interval=5)\n\n\nlearner.fit(10)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfile_path = \"../checkpoints/save_2.pt\"\nlearner.save_model(file_path)\n!ls ../checkpoints/\n\n save_0        save_153.pt   save_207.pt   save_262.pt   save_47.pt\n save_0.pt     save_154.pt   save_208.pt   save_263.pt   save_48.pt\n save_1        save_155.pt   save_209.pt   save_264.pt   save_49.pt\n save_100.pt   save_156.pt   save_20.pt    save_265.pt   save_4.pt\n save_101.pt   save_157.pt   save_210.pt   save_266.pt   save_50.pt\n save_102.pt   save_158.pt   save_211.pt   save_267.pt   save_51.pt\n save_103.pt   save_159.pt   save_212.pt   save_268.pt   save_52.pt\n save_104.pt   save_15.pt    save_213.pt   save_269.pt   save_53.pt\n save_105.pt   save_160.pt   save_214.pt   save_26.pt    save_54.pt\n save_106.pt   save_161.pt   save_215.pt   save_270.pt   save_55.pt\n save_107.pt   save_162.pt   save_216.pt   save_271.pt   save_56.pt\n save_108.pt   save_163.pt   save_217.pt   save_272.pt   save_57.pt\n save_109.pt   save_164.pt   save_218.pt   save_273.pt   save_58.pt\n save_10.pt    save_165.pt   save_219.pt   save_274.pt   save_59.pt\n save_110.pt   save_166.pt   save_21.pt    save_275.pt   save_5.pt\n save_111.pt   save_167.pt   save_220.pt   save_276.pt   save_60.pt\n save_112.pt   save_168.pt   save_221.pt   save_277.pt   save_61.pt\n save_113.pt   save_169.pt   save_222.pt   save_278.pt   save_62.pt\n save_114.pt   save_16.pt    save_223.pt   save_279.pt   save_63.pt\n save_115.pt   save_170.pt   save_224.pt   save_27.pt    save_64.pt\n save_116.pt   save_171.pt   save_225.pt   save_280.pt   save_65.pt\n save_117.pt   save_172.pt   save_226.pt   save_281.pt   save_66.pt\n save_118.pt   save_173.pt   save_227.pt   save_282.pt   save_67.pt\n save_119.pt   save_174.pt   save_228.pt   save_283.pt   save_68.pt\n save_11.pt    save_175.pt   save_229.pt   save_284.pt   save_69.pt\n save_120.pt   save_176.pt   save_22.pt    save_285.pt   save_6.pt\n save_121.pt   save_177.pt   save_230.pt   save_286.pt   save_70.pt\n save_122.pt   save_178.pt   save_231.pt   save_287.pt   save_71.pt\n save_123.pt   save_179.pt   save_232.pt   save_288.pt   save_72.pt\n save_124.pt   save_17.pt    save_233.pt   save_289.pt   save_73.pt\n save_125.pt   save_180.pt   save_234.pt   save_28.pt    save_74.pt\n save_126.pt   save_181.pt   save_235.pt   save_290.pt   save_75.pt\n save_127.pt   save_182.pt   save_236.pt   save_291.pt   save_76.pt\n save_128.pt   save_183.pt   save_237.pt   save_292.pt   save_77.pt\n save_129.pt   save_184.pt   save_238.pt   save_293.pt   save_78.pt\n save_12.pt    save_185.pt   save_239.pt   save_294.pt   save_79.pt\n save_130.pt   save_186.pt   save_23.pt    save_295.pt   save_7.pt\n save_131.pt   save_187.pt   save_240.pt   save_296.pt   save_80.pt\n save_132.pt   save_188.pt   save_241.pt   save_297.pt   save_81.pt\n save_133.pt   save_189.pt   save_242.pt   save_298.pt   save_82.pt\n save_134.pt   save_18.pt    save_243.pt   save_299.pt   save_83.pt\n save_135.pt   save_190.pt   save_244.pt   save_29.pt   'save_84 (copy).pt'\n save_136.pt   save_191.pt   save_245.pt   save_2.pt     save_84.pt\n save_137.pt   save_192.pt   save_246.pt   save_30.pt    save_85.pt\n save_138.pt   save_193.pt   save_247.pt   save_31.pt    save_86.pt\n save_139.pt   save_194.pt   save_248.pt   save_32.pt    save_87.pt\n save_13.pt    save_195.pt   save_249.pt   save_33.pt    save_88.pt\n save_140.pt   save_196.pt   save_24.pt    save_34.pt    save_89.pt\n save_141.pt   save_197.pt   save_250.pt   save_35.pt    save_8.pt\n save_142.pt   save_198.pt   save_251.pt   save_36.pt    save_90.pt\n save_143.pt   save_199.pt   save_252.pt   save_37.pt    save_91.pt\n save_144.pt   save_19.pt    save_253.pt   save_38.pt    save_92.pt\n save_145.pt   save_1.pt     save_254.pt   save_39.pt    save_93.pt\n save_146.pt   save_2        save_255.pt   save_3.pt     save_94.pt\n save_147.pt   save_200.pt   save_256.pt   save_40.pt    save_95.pt\n save_148.pt   save_201.pt   save_257.pt   save_41.pt    save_96.pt\n save_149.pt   save_202.pt   save_258.pt   save_42.pt    save_97.pt\n save_14.pt    save_203.pt   save_259.pt   save_43.pt    save_98.pt\n save_150.pt   save_204.pt   save_25.pt    save_44.pt    save_99.pt\n save_151.pt   save_205.pt   save_260.pt   save_45.pt    save_9.pt\n save_152.pt   save_206.pt   save_261.pt   save_46.pt\n\n\n\nsource\n\n\ncount_parameters\n\n count_parameters (model:torch.nn.modules.module.Module)\n\n\ncount_parameters(learner.model)\n\n38529\n\n\n\nsource\n\n\nload_checkpoint\n\n load_checkpoint (file_path:str, device='cpu')\n\n\nstate_dict, config, norm = load_checkpoint(file_path, 'cpu')\nlearner = FastspeechLearner(dl, norm, FastSpeech, Adam, TransformerScheduler,\n                            config, mae_loss, F.mse_loss, mae_loss, log_interval=5)\nlearner.load_model_state_dict(state_dict)"
+  },
+  {
+    "objectID": "preprocess.html",
+    "href": "preprocess.html",
+    "title": "preprocess",
+    "section": "",
+    "text": "source\n\n\n\n map_tensors (inp:list[list])\n\n\ndurations = list(map(tensor, durations))\nduration = durations[0]\nduration\n\ntensor([ 3.45,  2.58,  9.47,  2.58,  6.03, 15.50, 19.81, 21.53,  6.03,  1.72,  8.61, 12.06,  6.03,  4.31,  5.17, 16.37, 10.34,  6.89, 11.20,\n         3.45,  2.58,  8.61,  4.31,  6.03, 11.20,  4.31,  8.61,  8.61,  6.03,  6.03,  9.47,  5.17,  2.58,  6.03,  6.89,  3.45,  2.58,  6.89,\n         5.17,  2.58,  5.17, 12.06, 21.53,  6.03, 12.06, 37.90,  6.03,  8.61, 13.78, 18.09,  8.61,  2.58,  2.58,  9.47,  3.45, 14.64,  9.47,\n         4.31,  4.31, 10.34,  5.17,  9.47,  9.47,  5.17,  2.58,  2.58,  6.03, 18.09, 11.20,  4.31, 10.34,  5.17,  6.89,  6.03,  6.89,  3.45,\n         3.45,  4.31,  9.47,  2.58, 12.92, 10.34,  4.31, 10.34,  6.89,  4.31,  7.75,  2.58,  3.45,  6.03,  6.89,  2.58,  6.03,  5.17,  4.31,\n        13.78,  5.17,  1.72,  5.17,  8.61,  7.75,  7.75,  3.45,  6.89,  6.89, 11.20,  6.03, 14.64])\n\n\n\nsource\n\n\n\n\n argmax_all (tens)\n\n\nargmax_all(duration)\n\n[45]\n\n\n\nsource\n\n\n\n\n pad_max_seq (seq:list[torch._VariableFunctionsClass.tensor], pad_val=0,\n              pad_len=1)\n\n\npad_max_seq(durations)[0][-1]\n\ntensor(0.)"
+  },
+  {
+    "objectID": "preprocess.html#utils",
+    "href": "preprocess.html#utils",
+    "title": "preprocess",
+    "section": "",
+    "text": "source\n\n\n\n map_tensors (inp:list[list])\n\n\ndurations = list(map(tensor, durations))\nduration = durations[0]\nduration\n\ntensor([ 3.45,  2.58,  9.47,  2.58,  6.03, 15.50, 19.81, 21.53,  6.03,  1.72,  8.61, 12.06,  6.03,  4.31,  5.17, 16.37, 10.34,  6.89, 11.20,\n         3.45,  2.58,  8.61,  4.31,  6.03, 11.20,  4.31,  8.61,  8.61,  6.03,  6.03,  9.47,  5.17,  2.58,  6.03,  6.89,  3.45,  2.58,  6.89,\n         5.17,  2.58,  5.17, 12.06, 21.53,  6.03, 12.06, 37.90,  6.03,  8.61, 13.78, 18.09,  8.61,  2.58,  2.58,  9.47,  3.45, 14.64,  9.47,\n         4.31,  4.31, 10.34,  5.17,  9.47,  9.47,  5.17,  2.58,  2.58,  6.03, 18.09, 11.20,  4.31, 10.34,  5.17,  6.89,  6.03,  6.89,  3.45,\n         3.45,  4.31,  9.47,  2.58, 12.92, 10.34,  4.31, 10.34,  6.89,  4.31,  7.75,  2.58,  3.45,  6.03,  6.89,  2.58,  6.03,  5.17,  4.31,\n        13.78,  5.17,  1.72,  5.17,  8.61,  7.75,  7.75,  3.45,  6.89,  6.89, 11.20,  6.03, 14.64])\n\n\n\nsource\n\n\n\n\n argmax_all (tens)\n\n\nargmax_all(duration)\n\n[45]\n\n\n\nsource\n\n\n\n\n pad_max_seq (seq:list[torch._VariableFunctionsClass.tensor], pad_val=0,\n              pad_len=1)\n\n\npad_max_seq(durations)[0][-1]\n\ntensor(0.)"
+  },
+  {
+    "objectID": "preprocess.html#phones",
+    "href": "preprocess.html#phones",
+    "title": "preprocess",
+    "section": "phones",
+    "text": "phones\n\nsource\n\nVocab\n\n Vocab (vocab_path:str, specials:list=[])\n\nThis is a vocab object to used to load in a vocabulary, vectorize phonemes, and decode embeddings\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nvocab_path\nstr\n\nThe path to vocabulary file containing all the words in the vocabulary\n\n\nspecials\nlist\n[]\nThe special tokens not in the vocabulary file\n\n\n\n\nvocab = Vocab(vocab_path, ['spn'])\nvocab[10], vocab[vocab[10]], len(vocab)\n\n('AH1', 10, 86)\n\n\n\nsource\n\n\nphones_list_to_num\n\n phones_list_to_num (phones:list[list[int]], vocab:__main__.Vocab)\n\n\nnums = phones_list_to_num(phones, vocab)\nnums\n\n(#2) [[65, 66, 45, 55, 69, 44, 56, 44, 55, 27, 9, 59, 55, 53, 48, 67, 30, 55, 67, 80, 45, 27, 80, 45, 25, 80, 49, 2, 66, 6, 69, 65, 66, 30, 82, 9, 55, 69, 52, 9, 55, 67, 34, 55, 26, 26, 45, 40, 33, 82, 40, 66, 10, 54, 54, 59, 67, 69, 45, 40, 55, 2, 69, 40, 66, 10, 54, 14, 53, 27, 9, 2, 66, 69, 67, 9, 55, 26, 52, 66, 6, 40, 69, 67, 66, 31, 65, 66, 9, 82, 30, 55, 69, 9, 26, 44, 55, 27, 9, 31, 52, 67, 9, 24, 45, 68, 9, 55],[44, 55, 24, 49, 44, 56, 52, 9, 54, 65, 6, 66, 9, 69, 44, 79, 53, 50, 54, 2, 26, 33, 55]]\n\n\n\nsource\n\n\npad_phones\n\n pad_phones (phones:list[torch._VariableFunctionsClass.tensor],\n             pad_num:int)\n\n\npad_phones(map_tensors(nums), vocab.pad_num).shape\n\ntorch.Size([2, 108])"
+  },
+  {
+    "objectID": "preprocess.html#audio",
+    "href": "preprocess.html#audio",
+    "title": "preprocess",
+    "section": "audio",
+    "text": "audio\n\nsource\n\ntrim_audio\n\n trim_audio (inp:&lt;built-infunctionarray&gt;, top_db:int, n_fft:int, hl:int)\n\n\n\n\n\n\n\n\n\n\nType\nDetails\n\n\n\n\ninp\narray\nInput audio array\n\n\ntop_db\nint\nThe threshold (in decibels) below reference to consider as silence\n\n\nn_fft\nint\nThe number of samples per analysis frame\n\n\nhl\nint\nThe number of samples between analysis frames\n\n\n\n\ntrimmed = trim_audio(wav, top_db=30, n_fft=1024, hl=256)\nlen(wav) - len(trimmed)\n\n2461\n\n\n\ntrimmed_mel = melspectrogram(trimmed)\nshow_mels([mel, trimmed_mel]);\n\n\n\n\n\ndisplay(Audio(wav, rate=sr))\ndisplay(Audio(trimmed, rate=sr))\n\n\n                \n                    \n                    Your browser does not support the audio element.\n                \n              \n\n\n\n                \n                    \n                    Your browser does not support the audio element.\n                \n              \n\n\n\nsource\n\n\nreduce_noise\n\n reduce_noise (wav, sr, *args, **kwargs)\n\n\nreduced_noise = reduce_noise(wav, sr)\ndisplay(Audio(reduced_noise, rate=sr))\n\n\n                \n                    \n                    Your browser does not support the audio element.\n                \n              \n\n\n\nshow_mel(melspectrogram(reduced_noise))\n\n\n\n\n\nsource\n\n\npad_mels\n\n pad_mels (mels:list[torch._VariableFunctionsClass.tensor], norm_val=0)\n\n\npadded_mels = pad_mels(map_tensors(mels))\npadded_mels.shape\n\ntorch.Size([2, 80, 832])"
+  },
+  {
+    "objectID": "preprocess.html#durations",
+    "href": "preprocess.html#durations",
+    "title": "preprocess",
+    "section": "durations",
+    "text": "durations\n\nsource\n\nround_and_align_durations\n\n round_and_align_durations (duration:&lt;built-\n                            inmethodtensoroftypeobjectat0x7f092627c540&gt;,\n                            mel_len:int)\n\nRounds duration such that durations add up to the mel length and if they don’t add up it adds to each phoneme based on difference between rounded and duration\n\nrounded = round_and_align_durations(duration, mel_len)\nrounded\n\ntensor([ 3.,  3.,  9.,  3.,  6., 17., 20., 23.,  6.,  2.,  9., 12.,  6.,  4.,  5., 16., 10.,  7., 11.,  3.,  4.,  9.,  4.,  6., 11.,  4.,\n         9.,  9.,  6.,  6.,  9.,  5.,  3.,  6.,  7.,  3.,  4.,  7.,  5.,  4.,  5., 12., 23.,  6., 12., 38.,  6.,  9., 14., 18.,  9.,  3.,\n         3.,  9.,  3., 15.,  9.,  4.,  4., 10.,  5.,  9.,  9.,  5.,  3.,  4.,  6., 18., 11.,  4., 10.,  5.,  7.,  6.,  7.,  3.,  3.,  4.,\n         9.,  3., 13., 10.,  4., 10.,  7.,  4.,  8.,  3.,  3.,  6.,  7.,  3.,  6.,  5.,  4., 14.,  5.,  2.,  5.,  9.,  8.,  8.,  3.,  7.,\n         7., 11.,  6., 15.])\n\n\n\nsource\n\n\npad_duration\n\n pad_duration (duration:list[torch._VariableFunctionsClass.tensor],\n               mel_len:int)\n\n\npadded_durations = pad_duration(pad_max_seq(rounded_durations), padded_mels.shape[-1])\npadded_durations.shape\n\ntorch.Size([2, 109])"
+  },
+  {
+    "objectID": "preprocess.html#regularization",
+    "href": "preprocess.html#regularization",
+    "title": "preprocess",
+    "section": "regularization",
+    "text": "regularization\n\nsource\n\nflatten_and_concat\n\n flatten_and_concat (arrays:list[numpy.array])\n\n\nflattened = flatten_and_concat(mels)\nflattened.shape\n\n(79680,)\n\n\n\nsource\n\n\nZScoreNormalization\n\n ZScoreNormalization (mean:float, std:float, *args, **kwargs)\n\nCreates a normalization object that allows for normalization and denormalization\n\nmean, std = flattened.mean(), flattened.std()\nnorm = ZScoreNormalization(mean, std)\n\nnormalized_mel = norm.normalize(mel)\ndenormalized_mel = norm.denormalize(normalized_mel)\n\nshow_mels([normalized_mel, denormalized_mel])\n\n\n\n\n\nsource\n\n\nMinMaxNormalization\n\n MinMaxNormalization (max_val:float, min_val:float, *args, **kwargs)\n\nCreates a normalization object that allows for normalization and denormalization\n\nmax_val, min_val = flattened.max(), flattened.min()\nnorm = MinMaxNormalization(max_val, min_val)\n\nnormalized_mel = norm.normalize(mel)\ndenormalized_mel = norm.denormalize(normalized_mel)\n\nshow_mels([normalized_mel, denormalized_mel])\n\n\n\n\n\nsource\n\n\nNoNorm\n\n NoNorm (*args, **kwargs)\n\nInitialize self. See help(type(self)) for accurate signature."
+  },
+  {
+    "objectID": "preprocess.html#transform",
+    "href": "preprocess.html#transform",
+    "title": "preprocess",
+    "section": "transform",
+    "text": "transform\n\nsource\n\ntransform_inp\n\n transform_inp (inp, transform_list:list)"
+  },
+  {
+    "objectID": "loading.html",
+    "href": "loading.html",
+    "title": "loading",
+    "section": "",
+    "text": "source\n\n\n\n get_audio_files (dir_path:str)\n\n\n\n\n\nType\nDetails\n\n\n\n\ndir_path\nstr\nPath of directory containing .wav files\n\n\n\n\nfile_paths = get_audio_files(path)\nfile_path = file_paths[0]\nfile_path\n\nPath('../sample_data/LJ001-0002.wav')\n\n\n\nsource\n\n\n\n\n load_audio (file_path:str, sr:int)\n\n\n\n\n\nType\nDetails\n\n\n\n\nfile_path\nstr\nPath to a file with .wav extension\n\n\nsr\nint\nSampling rate\n\n\n\n\nwav = load_audio(file_path, 22050)\nwav.shape\n\n(41885,)\n\n\n\nsource\n\n\n\n\n melspectrogram (inp:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;,\n                 n_fft:int=1024, hl:int=256, nb:int=80)\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\ninp\ntensor\n\n\n\n\nn_fft\nint\n1024\nLength of the windowed signal\n\n\nhl\nint\n256\nThe hop length\n\n\nnb\nint\n80\nNumber of mel bins\n\n\n\n\nmel = melspectrogram(wav)\nmel.shape\n\n(80, 164)"
+  },
+  {
+    "objectID": "loading.html#audio",
+    "href": "loading.html#audio",
+    "title": "loading",
+    "section": "",
+    "text": "source\n\n\n\n get_audio_files (dir_path:str)\n\n\n\n\n\nType\nDetails\n\n\n\n\ndir_path\nstr\nPath of directory containing .wav files\n\n\n\n\nfile_paths = get_audio_files(path)\nfile_path = file_paths[0]\nfile_path\n\nPath('../sample_data/LJ001-0002.wav')\n\n\n\nsource\n\n\n\n\n load_audio (file_path:str, sr:int)\n\n\n\n\n\nType\nDetails\n\n\n\n\nfile_path\nstr\nPath to a file with .wav extension\n\n\nsr\nint\nSampling rate\n\n\n\n\nwav = load_audio(file_path, 22050)\nwav.shape\n\n(41885,)\n\n\n\nsource\n\n\n\n\n melspectrogram (inp:&lt;built-inmethodtensoroftypeobjectat0x7f092627c540&gt;,\n                 n_fft:int=1024, hl:int=256, nb:int=80)\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\ninp\ntensor\n\n\n\n\nn_fft\nint\n1024\nLength of the windowed signal\n\n\nhl\nint\n256\nThe hop length\n\n\nnb\nint\n80\nNumber of mel bins\n\n\n\n\nmel = melspectrogram(wav)\nmel.shape\n\n(80, 164)"
+  },
+  {
+    "objectID": "loading.html#phones-and-durations",
+    "href": "loading.html#phones-and-durations",
+    "title": "loading",
+    "section": "phones and durations",
+    "text": "phones and durations\n\nsource\n\nreplace_extension\n\n replace_extension (path:str, extension:str)\n\n\n\n\n\nType\nDetails\n\n\n\n\npath\nstr\nFile path\n\n\nextension\nstr\nNew extension\n\n\n\n\ntgt_path = replace_extension(file_path, \".TextGrid\")\ntgt_path\n\nPath('../sample_data/LJ001-0002.TextGrid')\n\n\n\nsource\n\n\nload_tiers\n\n load_tiers (file_path:str)\n\n\n\n\n\nType\nDetails\n\n\n\n\nfile_path\nstr\nPath to a .TextGrid file\n\n\n\n\ntiers = load_tiers(tgt_path)\ntiers[0]\n\nInterval(0.0, 0.07, \"IH0\")\n\n\n\nsource\n\n\nget_phones_and_durations\n\n get_phones_and_durations (tgt_path:str, sr:int, hl:int)\n\n\n\n\n\nType\nDetails\n\n\n\n\ntgt_path\nstr\nPath to a .TextGrid file\n\n\nsr\nint\nWaveform sampling rate\n\n\nhl\nint\nSpectrogram hop length\n\n\n\n\nphones, durations = get_phones_and_durations(tgt_path, 22050, 256)\nphones[:3], durations[:3]\n\n(('IH0', 'N', 'B'), (6.029296875000001, 6.029296875000001, 3.4453124999999982))"
+  }
+]
