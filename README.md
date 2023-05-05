@@ -43,6 +43,6 @@ operation
 sf.write(save_path, wav, sr)
 ```
 
-<audio src="../sample_data/demonstration.wav" controls>
+<audio src="https://github.com/ahadjawaid/fastspeech/blob/main/sample_data/demonstration.wav?raw=true" controls>
 Your browser does not support the audio element.
 </audio>
