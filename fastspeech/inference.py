@@ -15,9 +15,9 @@ from g2p_en import G2p
 import re
 
 # %% ../nbs/07-inference.ipynb 7
-def load_model_inference(checkpoint_path, training=False):
+def load_model_inference(Model, checkpoint_path, training=False):
     state_dict, config, norm = load_checkpoint(checkpoint_path, 'cpu')
-    model = FastSpeech(config["model"])
+    model = Model(config["model"])
     model.load_state_dict(state_dict['model'])
     model = model.train(mode=training)
     return model, norm
