@@ -2,7 +2,8 @@
 
 # %% auto 0
 __all__ = ['get_positional_embeddings', 'Conv1d', 'Linear', 'scaled_dot_product_attention', 'AttentionHead', 'MultiHeadAttention',
-           'ConvNet', 'FeedForwardTransformer', 'DurationPredictor', 'length_regulator', 'PostNet', 'FastSpeech']
+           'ConvNet', 'FeedForwardTransformer', 'VariencePredictor', 'length_regulator', 'PostNet', 'FastSpeech',
+           'FastSpeech2']
 
 # %% ../nbs/01_modules.ipynb 3
 import torch
@@ -10,6 +11,7 @@ import torch.nn as nn
 from torch import tensor
 from math import sqrt
 import torch.nn.functional as F
+from .preprocess import linear_quantization, logarithmic_quantization
 
 # %% ../nbs/01_modules.ipynb 12
 def get_positional_embeddings(seq_len, # The length of the sequence
@@ -116,11 +118,7 @@ class FeedForwardTransformer(nn.Module):
         return x
 
 # %% ../nbs/01_modules.ipynb 33
-class DurationPredictor(nn.Module):
-    '''This module predicts the logarithmic duration length for each phoneme 
-    based on the phoneme hidden features. It consists of 2-layer 1D convolutional network 
-    with ReLU activation, each followed by the layer normalization and the dropout layer, 
-    and an extra linear layer to output a scalar.'''
+class VariencePredictor(nn.Module):
     def __init__(self, config):
         ''''''
         super().__init__()
@@ -181,7 +179,7 @@ class PostNet(nn.Module):
         for i, (layer, norm) in enumerate(modules):
             x = layer(x)
             x = norm(x)
-            x = torch.tanh(x) if i < len(self.layers) - 1 else x
+            x = F.tanh(x) if i < len(self.layers) - 1 else x
             x = self.dropout(x)
             
         return x
@@ -198,7 +196,7 @@ class FastSpeech(nn.Module):
         self.embedding = nn.Embedding(es, hs)
         self.encoder = nn.Sequential(*[FeedForwardTransformer(config["encoder"]) for _ in range(ne)])
         self.decoder = nn.Sequential(*[FeedForwardTransformer(config["decoder"]) for _ in range(nd)])
-        self.duration_predictor = DurationPredictor(config["duration_predictor"])
+        self.duration_predictor = VariencePredictor(config["duration_predictor"])
         self.linear = Linear(hs, no)
 #         self.postnet = PostNet(config["postnet"])
         
@@ -221,3 +219,56 @@ class FastSpeech(nn.Module):
         
 #         return (x, log_durations, res) if self.training else x   
         return (x, log_durations) if self.training else x   
+
+# %% ../nbs/01_modules.ipynb 45
+class FastSpeech2(nn.Module):
+    ''''''
+    def __init__(self, config, device=None):
+        ''''''
+        super().__init__()
+        self.device = device
+        es, hs, no, ne, nd = (config["embedding_size"], config["hidden_size"], config["num_bins"], 
+                              config["num_encoders"], config["num_decoders"])
+        
+        self.embedding = nn.Embedding(es, hs)
+        self.encoder = nn.Sequential(*[FeedForwardTransformer(config["encoder"]) for _ in range(ne)])
+        self.decoder = nn.Sequential(*[FeedForwardTransformer(config["decoder"]) for _ in range(nd)])
+        
+        self.pitch_embedding = nn.Embedding(256, hs)
+        self.energy_embedding = nn.Embedding(256, hs)
+        self.duration_predictor = VariencePredictor(config["duration_predictor"])
+        self.pitch_predictor = VariencePredictor(config["pitch_predictor"])
+        self.energy_predictor = VariencePredictor(config["energy_predictor"])
+        
+        self.linear = Linear(hs, no)
+        
+    def forward(self, phones, durations=None, pitch=None, energy=None, upsample_ratio=1.):
+        x = self.embedding(phones)
+        x = x +  get_positional_embeddings(*x.shape[-2:], device=self.device)
+        x = self.encoder(x)
+
+        durations_pred = self.duration_predictor(x.detach())
+        if durations == None or not self.training:
+            durations = durations_pred
+        x = length_regulator(x, durations, upsample_ratio, device=self.device)
+        
+        pitch_pred = self.pitch_predictor(x.detach())
+        if pitch == None or not self.training:
+            pitch = pitch_pred
+
+        quantized_pitch = linear_quantization(pitch, 256, device=self.device)
+        embedded_pitch = self.pitch_embedding(quantized_pitch)
+        x = x + embedded_pitch
+        
+        energy_pred = self.energy_predictor(x.detach())
+        if energy == None or not self.training:
+            energy = energy_pred
+        quantized_energy = linear_quantization(energy, 256, device=self.device)
+        embedded_energy = self.energy_embedding(quantized_energy)
+        x = x + embedded_energy
+        
+        x = x + get_positional_embeddings(*x.shape[-2:], device=self.device)
+        x = self.decoder(x)
+        x = self.linear(x).transpose(1,2)
+ 
+        return (x, durations_pred, pitch_pred, energy_pred) if self.training else x   

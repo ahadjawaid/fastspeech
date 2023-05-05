@@ -2,14 +2,16 @@
 
 # %% auto 0
 __all__ = ['map_tensors', 'argmax_all', 'pad_max_seq', 'Vocab', 'phones_list_to_num', 'pad_phones', 'trim_audio', 'reduce_noise',
-           'pad_mels', 'round_and_align_durations', 'pad_duration', 'flatten_and_concat', 'ZScoreNormalization',
-           'MinMaxNormalization', 'NoNorm', 'transform_inp']
+           'pad_mels', 'extract_pitch', 'extract_energy', 'round_and_align_durations', 'pad_duration',
+           'flatten_and_concat', 'ZScoreNormalization', 'MinMaxNormalization', 'NoNorm', 'torch_digitize',
+           'linear_quantization', 'logarithmic_quantization', 'transform_inp']
 
 # %% ../nbs/04_preprocess.ipynb 3
 from pathlib import Path
 import librosa
 from numpy import array
 import torch
+import pyworld as pw
 import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 import noisereduce as nr
@@ -94,7 +96,21 @@ def pad_mels(mels: list[tensor], norm_val=0):
     return pad_sequence(L(mels).map(lambda x: x.T), batch_first=True, 
                         padding_value=norm_val).transpose(1, 2)
 
+# %% ../nbs/04_preprocess.ipynb 33
+def extract_pitch(wav, sr=22050, hop_length=256):
+    f0, t = pw.dio(wav.astype(np.float64), fs=sr, 
+               frame_period=hop_length/sr * 1000)
+    pitch = pw.stonemask(wav.astype(np.float64), f0, t, fs=sr)
+    return pitch.astype(np.float32)
+
 # %% ../nbs/04_preprocess.ipynb 35
+def extract_energy(wav, n_fft=1024, hop_length=256):
+    stft = librosa.stft(y=wav, n_fft=n_fft, hop_length=hop_length)
+    amplitude = np.abs(stft)
+    energy = np.linalg.norm(amplitude, axis=0)
+    return energy
+
+# %% ../nbs/04_preprocess.ipynb 39
 def round_and_align_durations(duration: tensor, mel_len: int):
     '''Rounds duration such that durations add up to the mel length and if 
     they don\'t add up it adds to each phoneme based on difference between 
@@ -116,19 +132,19 @@ def round_and_align_durations(duration: tensor, mel_len: int):
             
     return rounded_duration
 
-# %% ../nbs/04_preprocess.ipynb 38
+# %% ../nbs/04_preprocess.ipynb 42
 def pad_duration(duration: list[tensor], mel_len: int):
     padded_duration = pad_sequence(duration, batch_first=True)
     padded_duration_amount = [mel_len - dur.sum().item() for dur in duration]
     padded_duration[:, -1] = tensor(padded_duration_amount)
     return padded_duration
 
-# %% ../nbs/04_preprocess.ipynb 41
+# %% ../nbs/04_preprocess.ipynb 45
 def flatten_and_concat(arrays: list[array]):
     concatenated_arrays = np.concatenate([a.flatten() for a in arrays])
     return concatenated_arrays
 
-# %% ../nbs/04_preprocess.ipynb 43
+# %% ../nbs/04_preprocess.ipynb 47
 class ZScoreNormalization:
     def __init__(self, mean: float, std: float, *args, **kwargs):
         '''Creates a normalization object that allows for normalization and 
@@ -141,7 +157,7 @@ class ZScoreNormalization:
     def denormalize(self, inp: tensor):
         return inp * self.std + self.mean
 
-# %% ../nbs/04_preprocess.ipynb 45
+# %% ../nbs/04_preprocess.ipynb 49
 class MinMaxNormalization:
     def __init__(self, max_val: float, min_val: float, *args, **kwargs):
         '''Creates a normalization object that allows for normalization and 
@@ -154,7 +170,7 @@ class MinMaxNormalization:
     def denormalize(self, inp):
         return inp * (self.max_val - self.min_val) + self.min_val
 
-# %% ../nbs/04_preprocess.ipynb 47
+# %% ../nbs/04_preprocess.ipynb 51
 class NoNorm:
     def __init__(self, *args, **kwargs):
         pass
@@ -163,7 +179,40 @@ class NoNorm:
     def denormalize(self, inp):
         return inp
 
-# %% ../nbs/04_preprocess.ipynb 49
+# %% ../nbs/04_preprocess.ipynb 53
+def torch_digitize(tensor, bins, device=None):
+    indices = torch.zeros_like(tensor, device=device)
+    for idx, bin_val in enumerate(bins):
+        indices += (tensor >= bin_val).long()
+    return indices
+
+# %% ../nbs/04_preprocess.ipynb 54
+def linear_quantization(vals, n_bins, min_v=None, max_v=None, device=None):
+    if min_v is None: min_v = vals.min().detach().item()
+    if max_v is None: max_v = vals.max().detach().item()
+
+    bins = torch.linspace(min_v, max_v, n_bins - 1, device=device)
+    
+    quantized_vals = torch_digitize(vals, bins, device=device) - 1
+    return quantized_vals.to(torch.int)
+
+# %% ../nbs/04_preprocess.ipynb 56
+def logarithmic_quantization(vals, n_bins, min_v=None, max_v=None, device=None):
+    if min_v is None: min_v = vals.min()
+    if max_v is None: max_v = vals.max()
+        
+    min_v = tensor(max(min_v, 1e-20))
+    max_v = tensor(max(max_v, min_v * 1.0001))
+    
+    min_v = min_v * 0.99993
+    import pdb; pdb.set_trace
+        
+    bins = torch.logspace(torch.log10(min_v), torch.log10(max_v), n_bins, device=device)
+    
+    quantized_vals = torch_digitize(vals, bins, device=device)
+    return quantized_vals.to(torch.int)
+
+# %% ../nbs/04_preprocess.ipynb 59
 def transform_inp(inp, transform_list: list):
     x = inp
     for transform in transform_list:
